@@ -47,15 +47,6 @@ class ILC_Admin_Menu {
             'ilc-settings',
             array( 'ILC_Admin_Settings_Page', 'render' )
         );
-
-        add_submenu_page(
-            'ilc-clusters',
-            __( 'Bulk Builder', 'internal-link-clusters' ),
-            __( 'Bulk Builder', 'internal-link-clusters' ),
-            'manage_options',
-            'ilc-bulk-builder',
-            array( 'ILC_Admin_Bulk_Builder_Page', 'render' )
-        );
     }
 
     /**

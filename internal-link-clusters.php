@@ -27,7 +27,6 @@ if ( is_admin() ) {
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-clusters-page.php';
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-import-page.php';
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-settings-page.php';
-    require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-bulk-builder-page.php';
 }
 
 /**
