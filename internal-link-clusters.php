@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Internal Link Clusters
- * Description: Manage internal-link “hub” grids (clusters) and render them via shortcodes, with admin UI, styling controls, layout modes, and auto-insert.
+ * Description: Manage internal-link hub grids (clusters) and render them via shortcodes, with admin UI, styling controls, layout modes, and auto-insert.
  * Version: 0.4.0
  * Author: Your Name
  * Text Domain: internal-link-clusters
