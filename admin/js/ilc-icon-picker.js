@@ -110,45 +110,48 @@
         bindModalEvents();
     }
 
-    // Detect Font Awesome version and get correct class format
-    function getIconClass(iconName) {
-        // Check for Font Awesome 6 (has fa-solid, fa-regular, fa-brands)
-        const fa6Loaded = $('link[href*="font-awesome"][href*="all.min.css"]').length > 0 || 
-                         $('link[href*="fontawesome"][href*="all"]').length > 0 ||
-                         $('link[id*="font-awesome-css"]').length > 0;
-        
-        // Check for Font Awesome 4/5 (uses fa fa-icon format)
-        const fa4Loaded = $('link[href*="font-awesome"][href*="4."]').length > 0 ||
-                         $('link[id*="font-awesome-4"]').length > 0;
-        
-        // Test if FA 6 classes work by checking if :before pseudo-element has content
-        let useFA6 = fa6Loaded;
-        if (fa6Loaded && !fa4Loaded) {
-            // Test if fa-solid works
-            const testEl = $('<i class="fa-solid fa-home" style="position:absolute;left:-9999px;visibility:hidden;"></i>');
-            $('body').append(testEl);
-            try {
-                const style = window.getComputedStyle(testEl[0], ':before');
-                useFA6 = style && style.content && style.content !== 'none' && style.content !== '';
-            } catch(e) {
-                useFA6 = false;
-            }
-            testEl.remove();
+    // Cache for detected Font Awesome format
+    let detectedFAFormat = null;
+    
+    // Simple detection based on what's loaded
+    function detectFAFormat() {
+        if (detectedFAFormat !== null) {
+            return detectedFAFormat;
         }
         
-        // Format icon class based on detected version
-        if (useFA6 && !fa4Loaded) {
-            // Font Awesome 6 format: fa-solid fa-icon
-            if (iconName.startsWith('fa-')) {
-                return 'fa-solid ' + iconName;
-            }
-            return 'fa-solid fa-' + iconName;
+        // Check what Font Awesome links are loaded
+        const hasFA6 = $('link[href*="font-awesome"][href*="all"], link[href*="fontawesome"][href*="all"], link[id*="font-awesome-css"]').length > 0;
+        const hasFA4 = $('link[href*="font-awesome"][href*="4."], link[id*="font-awesome-4"]').length > 0;
+        
+        // If both are loaded, prefer FA 4 since it's more compatible
+        // If only FA6 is loaded, use FA6
+        if (hasFA4 || (hasFA4 && hasFA6)) {
+            detectedFAFormat = 'fa4';
+        } else if (hasFA6) {
+            detectedFAFormat = 'fa6';
         } else {
-            // Font Awesome 4/5 format: fa fa-icon
-            if (iconName.startsWith('fa-')) {
-                return 'fa ' + iconName;
-            }
-            return 'fa fa-' + iconName;
+            // Default to FA 4
+            detectedFAFormat = 'fa4';
+        }
+        
+        return detectedFAFormat;
+    }
+    
+    // Get correct icon class format
+    function getIconClass(iconName) {
+        const format = detectFAFormat();
+        
+        // Ensure icon name has fa- prefix
+        if (!iconName.startsWith('fa-')) {
+            iconName = 'fa-' + iconName;
+        }
+        
+        if (format === 'fa6') {
+            // Font Awesome 6: fa-solid fa-icon
+            return 'fa-solid ' + iconName;
+        } else {
+            // Font Awesome 4/5: fa fa-icon
+            return 'fa ' + iconName;
         }
     }
 
@@ -156,6 +159,9 @@
     function renderIcons(filter = '') {
         const $container = $('.ilc-icon-picker-icons');
         $container.empty();
+
+        // Detect format before rendering
+        const format = detectFAFormat();
 
         const filteredIcons = faIcons.filter(icon => 
             icon.toLowerCase().includes(filter.toLowerCase())
@@ -176,6 +182,29 @@
             const iconName = $(this).data('icon');
             selectIcon(iconName);
         });
+        
+        // Check if icons are rendering after a delay, and try alternative format if needed
+        setTimeout(function() {
+            const $firstIcon = $container.find('.ilc-icon-item i').first();
+            if ($firstIcon.length) {
+                try {
+                    const style = window.getComputedStyle($firstIcon[0], ':before');
+                    const content = style.getPropertyValue('content');
+                    // If icons aren't rendering, try the other format
+                    if (!content || content === 'none' || content === '""' || content === "''" || content === 'normal') {
+                        // Switch format and re-render
+                        detectedFAFormat = format === 'fa6' ? 'fa4' : 'fa6';
+                        renderIcons(filter);
+                    }
+                } catch(e) {
+                    // If check fails, try alternative format
+                    if (format === 'fa6') {
+                        detectedFAFormat = 'fa4';
+                        renderIcons(filter);
+                    }
+                }
+            }
+        }, 300);
     }
 
     // Bind modal events
@@ -204,10 +233,26 @@
         $('#ilc-icon-picker-modal').data('target-input', $input).fadeIn(200);
         $('.ilc-icon-picker-search-input').val('').focus();
         
-        // Small delay to ensure Font Awesome is fully loaded
+        // Reset format detection to re-check
+        detectedFAFormat = null;
+        
+        // Wait a bit longer to ensure Font Awesome is fully loaded
         setTimeout(function() {
             renderIcons();
-        }, 50);
+            // Try again after a short delay if icons still don't show
+            setTimeout(function() {
+                if ($('.ilc-icon-item i').length > 0) {
+                    const $firstIcon = $('.ilc-icon-item i').first();
+                    const style = window.getComputedStyle($firstIcon[0], ':before');
+                    const content = style.getPropertyValue('content');
+                    if (!content || content === 'none' || content === '""' || content === "''") {
+                        // Icons not rendering, try alternative format
+                        detectedFAFormat = detectedFAFormat === 'fa6' ? 'fa4' : 'fa6';
+                        renderIcons();
+                    }
+                }
+            }, 300);
+        }, 100);
     }
 
     // Close icon picker
@@ -248,4 +293,5 @@
     });
 
 })(jQuery);
+
 
