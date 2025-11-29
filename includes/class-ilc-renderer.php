@@ -224,6 +224,7 @@ class ILC_Renderer {
     /**
      * Normalize Font Awesome class name.
      * Handles both old (fa fa-icon) and new (fa-solid fa-icon) formats.
+     * Detects which version is loaded on the site.
      *
      * @param string $icon_name Icon class name.
      * @return string Normalized icon class.
@@ -231,29 +232,43 @@ class ILC_Renderer {
     protected static function normalize_fa_class( $icon_name ) {
         $icon_name = trim( $icon_name );
         
-        // If it already starts with 'fa-', assume it's just the icon name
-        if ( strpos( $icon_name, 'fa-' ) === 0 ) {
-            // Check if it already has a prefix (fa-solid, fa-regular, etc.)
-            $parts = explode( ' ', $icon_name );
-            if ( count( $parts ) > 1 && strpos( $parts[0], 'fa-' ) === 0 && strpos( $parts[0], 'fa-solid' ) !== 0 && strpos( $parts[0], 'fa-regular' ) !== 0 && strpos( $parts[0], 'fa-brands' ) !== 0 ) {
-                // Old format: fa fa-icon -> convert to fa-solid fa-icon
-                return 'fa-solid ' . $icon_name;
-            }
-            // New format or just icon name
-            if ( strpos( $icon_name, 'fa-solid' ) === 0 || strpos( $icon_name, 'fa-regular' ) === 0 || strpos( $icon_name, 'fa-brands' ) === 0 ) {
-                return $icon_name;
-            }
-            // Just icon name, add fa-solid prefix
-            return 'fa-solid ' . $icon_name;
+        // If it already has a full class format, return as-is
+        if ( strpos( $icon_name, 'fa-solid' ) === 0 || strpos( $icon_name, 'fa-regular' ) === 0 || strpos( $icon_name, 'fa-brands' ) === 0 ) {
+            return $icon_name;
         }
         
-        // If it starts with 'fa ' (old format), convert to new
+        // Check if Font Awesome 6 is available (has fa-solid support)
+        $fa6_available = wp_style_is( 'font-awesome', 'enqueued' ) || 
+                        wp_style_is( 'font-awesome-css', 'enqueued' ) ||
+                        wp_style_is( 'ilc-fontawesome', 'enqueued' );
+        
+        // If it starts with 'fa ' (old format)
         if ( strpos( $icon_name, 'fa ' ) === 0 ) {
-            return str_replace( 'fa ', 'fa-solid ', $icon_name );
+            if ( $fa6_available ) {
+                return str_replace( 'fa ', 'fa-solid ', $icon_name );
+            }
+            return $icon_name; // Keep old format if FA 4/5
         }
         
-        // Default: assume it's just the icon name
-        return 'fa-solid fa-' . $icon_name;
+        // If it already starts with 'fa-', check format
+        if ( strpos( $icon_name, 'fa-' ) === 0 ) {
+            $parts = explode( ' ', $icon_name );
+            // If it's just 'fa-icon' without prefix
+            if ( count( $parts ) === 1 ) {
+                if ( $fa6_available ) {
+                    return 'fa-solid ' . $icon_name;
+                }
+                return 'fa ' . $icon_name;
+            }
+            // Already has format
+            return $icon_name;
+        }
+        
+        // Just the icon name without 'fa-' prefix
+        if ( $fa6_available ) {
+            return 'fa-solid fa-' . $icon_name;
+        }
+        return 'fa fa-' . $icon_name;
     }
 
     /**

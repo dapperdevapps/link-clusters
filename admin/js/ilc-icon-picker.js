@@ -110,6 +110,48 @@
         bindModalEvents();
     }
 
+    // Detect Font Awesome version and get correct class format
+    function getIconClass(iconName) {
+        // Check for Font Awesome 6 (has fa-solid, fa-regular, fa-brands)
+        const fa6Loaded = $('link[href*="font-awesome"][href*="all.min.css"]').length > 0 || 
+                         $('link[href*="fontawesome"][href*="all"]').length > 0 ||
+                         $('link[id*="font-awesome-css"]').length > 0;
+        
+        // Check for Font Awesome 4/5 (uses fa fa-icon format)
+        const fa4Loaded = $('link[href*="font-awesome"][href*="4."]').length > 0 ||
+                         $('link[id*="font-awesome-4"]').length > 0;
+        
+        // Test if FA 6 classes work by checking if :before pseudo-element has content
+        let useFA6 = fa6Loaded;
+        if (fa6Loaded && !fa4Loaded) {
+            // Test if fa-solid works
+            const testEl = $('<i class="fa-solid fa-home" style="position:absolute;left:-9999px;visibility:hidden;"></i>');
+            $('body').append(testEl);
+            try {
+                const style = window.getComputedStyle(testEl[0], ':before');
+                useFA6 = style && style.content && style.content !== 'none' && style.content !== '';
+            } catch(e) {
+                useFA6 = false;
+            }
+            testEl.remove();
+        }
+        
+        // Format icon class based on detected version
+        if (useFA6 && !fa4Loaded) {
+            // Font Awesome 6 format: fa-solid fa-icon
+            if (iconName.startsWith('fa-')) {
+                return 'fa-solid ' + iconName;
+            }
+            return 'fa-solid fa-' + iconName;
+        } else {
+            // Font Awesome 4/5 format: fa fa-icon
+            if (iconName.startsWith('fa-')) {
+                return 'fa ' + iconName;
+            }
+            return 'fa fa-' + iconName;
+        }
+    }
+
     // Render icons in the modal
     function renderIcons(filter = '') {
         const $container = $('.ilc-icon-picker-icons');
@@ -120,10 +162,11 @@
         );
 
         filteredIcons.forEach(icon => {
-            const iconClass = icon.startsWith('fa-') ? 'fa-solid ' + icon : 'fa-solid fa-' + icon;
+            const iconClass = getIconClass(icon);
+            const displayName = icon.replace(/^fa-/, '');
             const $icon = $('<div class="ilc-icon-item" data-icon="' + icon + '">' +
                 '<i class="' + iconClass + '"></i>' +
-                '<span class="ilc-icon-name">' + icon.replace('fa-', '') + '</span>' +
+                '<span class="ilc-icon-name">' + displayName + '</span>' +
                 '</div>');
             $container.append($icon);
         });
@@ -160,7 +203,11 @@
     function openIconPicker($input) {
         $('#ilc-icon-picker-modal').data('target-input', $input).fadeIn(200);
         $('.ilc-icon-picker-search-input').val('').focus();
-        renderIcons();
+        
+        // Small delay to ensure Font Awesome is fully loaded
+        setTimeout(function() {
+            renderIcons();
+        }, 50);
     }
 
     // Close icon picker
@@ -179,7 +226,18 @@
 
     // Initialize on document ready
     $(document).ready(function() {
-        initIconPicker();
+        // Wait for Font Awesome to fully load
+        if (document.readyState === 'complete') {
+            setTimeout(function() {
+                initIconPicker();
+            }, 200);
+        } else {
+            $(window).on('load', function() {
+                setTimeout(function() {
+                    initIconPicker();
+                }, 200);
+            });
+        }
     });
 
     // Re-initialize when new rows are added (for dynamic forms)
