@@ -21,6 +21,17 @@ class ILC_Settings {
             'style_box_hover_bg' => '#f0f0f0',
             'style_box_border'   => '#e0e0e0',
             'style_radius'       => '12',
+            // SEO defaults
+            'seo_schema_enabled'     => 1,
+            'seo_add_title_attr'     => 1,
+            'seo_default_rel'        => '', // empty = follow, 'nofollow' = nofollow
+            'seo_open_new_tab'        => 0,
+            'seo_add_aria_label'     => 1,
+            'seo_max_links'           => '', // empty = no limit
+            // Icon defaults
+            'icon_position'            => 'left', // left, right, above
+            'icon_color_default'       => '', // empty = inherit text color
+            'icon_enable_fontawesome' => 1, // Enable Font Awesome loading
         );
 
         $stored = get_option( self::OPTION_KEY, array() );
@@ -54,6 +65,23 @@ class ILC_Settings {
         $settings['style_box_hover_bg'] = isset( $data['style_box_hover_bg'] ) ? sanitize_hex_color( $data['style_box_hover_bg'] ) : $settings['style_box_hover_bg'];
         $settings['style_box_border']   = isset( $data['style_box_border'] ) ? sanitize_hex_color( $data['style_box_border'] ) : $settings['style_box_border'];
         $settings['style_radius']       = isset( $data['style_radius'] ) ? preg_replace( '/[^0-9]/', '', $data['style_radius'] ) : $settings['style_radius'];
+
+        // SEO settings
+        $settings['seo_schema_enabled'] = ! empty( $data['seo_schema_enabled'] ) ? 1 : 0;
+        $settings['seo_add_title_attr'] = ! empty( $data['seo_add_title_attr'] ) ? 1 : 0;
+        $settings['seo_default_rel']    = isset( $data['seo_default_rel'] ) ? sanitize_text_field( $data['seo_default_rel'] ) : $settings['seo_default_rel'];
+        $settings['seo_open_new_tab']   = ! empty( $data['seo_open_new_tab'] ) ? 1 : 0;
+        $settings['seo_add_aria_label'] = ! empty( $data['seo_add_aria_label'] ) ? 1 : 0;
+        $settings['seo_max_links']      = isset( $data['seo_max_links'] ) ? preg_replace( '/[^0-9]/', '', $data['seo_max_links'] ) : $settings['seo_max_links'];
+
+        // Icon settings
+        $icon_position = isset( $data['icon_position'] ) ? sanitize_text_field( $data['icon_position'] ) : 'left';
+        if ( ! in_array( $icon_position, array( 'left', 'right', 'above' ), true ) ) {
+            $icon_position = 'left';
+        }
+        $settings['icon_position']            = $icon_position;
+        $settings['icon_color_default']       = isset( $data['icon_color_default'] ) ? sanitize_hex_color( $data['icon_color_default'] ) : '';
+        $settings['icon_enable_fontawesome']  = ! empty( $data['icon_enable_fontawesome'] ) ? 1 : 0;
 
         update_option( self::OPTION_KEY, $settings );
     }

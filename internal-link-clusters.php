@@ -68,6 +68,19 @@ function ilc_enqueue_styles() {
         ILC_VERSION
     );
 
+    // Enqueue Font Awesome if enabled
+    if ( class_exists( 'ILC_Settings' ) ) {
+        $settings = ILC_Settings::get_settings();
+        if ( ! empty( $settings['icon_enable_fontawesome'] ) ) {
+            wp_enqueue_style(
+                'ilc-fontawesome',
+                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+                array(),
+                '6.4.0'
+            );
+        }
+    }
+
     if ( ! class_exists( 'ILC_Settings' ) ) {
         return;
     }

@@ -66,6 +66,40 @@
     transform: translateY(-1px);
 }
 
+/* Icon positioning */
+.rc-box .rc-icon-wrapper {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.rc-box .rc-link-text {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Icon left (default) */
+.rc-box .rc-icon-left {
+    margin-right: 0.5rem;
+}
+
+/* Icon right */
+.rc-box .rc-icon-right {
+    margin-left: 0.5rem;
+}
+
+/* Icon above text */
+.rc-box .rc-icon-above {
+    display: block;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-size: 1.5em;
+}
+
+.rc-box .rc-icon-above + .rc-link-text {
+    display: block;
+    text-align: center;
+}
+
 /* Responsive columns */
 @media (min-width: 480px) {
     .rc-grid {

@@ -54,6 +54,10 @@ class ILC_Renderer {
             $items[] = array(
                 'href'        => esc_url( $href ),
                 'anchor_text' => esc_html( $anchor_text ),
+                'icon_name'  => isset( $row->icon_name ) ? $row->icon_name : '',
+                'icon_color' => isset( $row->icon_color ) ? $row->icon_color : '',
+                'rel_attribute' => isset( $row->rel_attribute ) ? $row->rel_attribute : '',
+                'css_class'  => isset( $row->css_class ) ? $row->css_class : '',
             );
         }
 
@@ -61,21 +65,38 @@ class ILC_Renderer {
             return '';
         }
 
+        // Get SEO settings
+        $settings = class_exists( 'ILC_Settings' ) ? ILC_Settings::get_settings() : array();
+        $seo_schema_enabled = ! empty( $settings['seo_schema_enabled'] );
+        $seo_add_title_attr = ! empty( $settings['seo_add_title_attr'] );
+        $seo_add_aria_label = ! empty( $settings['seo_add_aria_label'] );
+        $seo_default_rel    = isset( $settings['seo_default_rel'] ) ? $settings['seo_default_rel'] : '';
+        $seo_open_new_tab   = ! empty( $settings['seo_open_new_tab'] );
+        $seo_max_links      = ! empty( $settings['seo_max_links'] ) ? (int) $settings['seo_max_links'] : 0;
+
+        // Limit items if max_links is set
+        if ( $seo_max_links > 0 && count( $items ) > $seo_max_links ) {
+            $items = array_slice( $items, 0, $seo_max_links );
+        }
+
         $heading  = ! empty( $cluster->heading ) ? esc_html( $cluster->heading ) : '';
         $subtitle = ! empty( $cluster->subtitle ) ? esc_html( $cluster->subtitle ) : '';
 
         // Layout mode: contained or fullwidth.
         $layout_class = '';
-        if ( class_exists( 'ILC_Settings' ) ) {
-            $settings = ILC_Settings::get_settings();
-            if ( isset( $settings['layout_mode'] ) && $settings['layout_mode'] === 'fullwidth' ) {
-                $layout_class = ' rc-cluster--fullwidth';
-            }
+        if ( isset( $settings['layout_mode'] ) && $settings['layout_mode'] === 'fullwidth' ) {
+            $layout_class = ' rc-cluster--fullwidth';
+        }
+
+        // Custom CSS class for cluster
+        $cluster_css_class = '';
+        if ( isset( $cluster->css_class ) && ! empty( $cluster->css_class ) ) {
+            $cluster_css_class = ' ' . esc_attr( $cluster->css_class );
         }
 
         ob_start();
         ?>
-        <section class="rc-cluster rc-cluster-<?php echo esc_attr( $cluster->slug ); ?><?php echo esc_attr( $layout_class ); ?>">
+        <section class="rc-cluster rc-cluster-<?php echo esc_attr( $cluster->slug ); ?><?php echo esc_attr( $layout_class ); ?><?php echo $cluster_css_class; ?>">
             <?php if ( $heading ) : ?>
                 <h2 class="rc-heading"><?php echo $heading; ?></h2>
             <?php endif; ?>
@@ -85,16 +106,93 @@ class ILC_Renderer {
             <?php endif; ?>
 
             <div class="rc-grid">
-                <?php foreach ( $items as $item ) : ?>
-                    <a href="<?php echo $item['href']; ?>" class="rc-box">
-                        <?php echo $item['anchor_text']; ?>
+                <?php foreach ( $items as $index => $item ) : ?>
+                    <?php
+                    // Build link attributes
+                    $link_attrs = array( 'href' => $item['href'], 'class' => 'rc-box' );
+
+                    // Add title attribute (Page Name - Site Title format)
+                    if ( $seo_add_title_attr ) {
+                        $site_title = get_bloginfo( 'name' );
+                        $page_title = $item['anchor_text'];
+                        $link_attrs['title'] = $page_title . ( $site_title ? ' - ' . $site_title : '' );
+                    }
+
+                    // Add aria-label
+                    if ( $seo_add_aria_label ) {
+                        $link_attrs['aria-label'] = sprintf( __( 'Visit %s', 'internal-link-clusters' ), $item['anchor_text'] );
+                    }
+
+                    // Add rel attribute (per-link override or default)
+                    $rel_parts = array();
+                    $link_rel = ! empty( $item['rel_attribute'] ) ? $item['rel_attribute'] : $seo_default_rel;
+                    if ( $link_rel ) {
+                        $rel_parts = array_merge( $rel_parts, explode( ' ', $link_rel ) );
+                    }
+                    if ( $seo_open_new_tab ) {
+                        $rel_parts[] = 'noopener';
+                        $rel_parts[] = 'noreferrer';
+                    }
+                    if ( ! empty( $rel_parts ) ) {
+                        $link_attrs['rel'] = implode( ' ', array_unique( $rel_parts ) );
+                    }
+
+                    // Add target attribute
+                    if ( $seo_open_new_tab ) {
+                        $link_attrs['target'] = '_blank';
+                    }
+
+                    // Add custom CSS class
+                    if ( ! empty( $item['css_class'] ) ) {
+                        $link_attrs['class'] = $link_attrs['class'] . ' ' . esc_attr( $item['css_class'] );
+                    }
+
+                    // Icon settings
+                    $icon_position = isset( $settings['icon_position'] ) ? $settings['icon_position'] : 'left';
+                    $icon_color_default = isset( $settings['icon_color_default'] ) ? $settings['icon_color_default'] : '';
+                    $icon_name = ! empty( $item['icon_name'] ) ? $item['icon_name'] : '';
+                    $icon_color = ! empty( $item['icon_color'] ) ? $item['icon_color'] : $icon_color_default;
+
+                    // Add analytics tracking attributes
+                    $link_attrs['data-cluster-link'] = '1';
+                    $link_attrs['data-link-text'] = esc_attr( $item['anchor_text'] );
+                    ?>
+                    <a <?php echo self::build_attributes( $link_attrs ); ?>>
+                        <?php
+                        // Display icon based on position
+                        if ( $icon_name ) {
+                            $icon_style = $icon_color ? ' style="color: ' . esc_attr( $icon_color ) . ';"' : '';
+                            $icon_class = self::normalize_fa_class( $icon_name );
+                            $icon_html = '<i class="' . esc_attr( $icon_class ) . '"' . $icon_style . '></i>';
+                            
+                            if ( $icon_position === 'above' ) {
+                                echo '<span class="rc-icon-wrapper rc-icon-above">' . $icon_html . '</span>';
+                                echo '<span class="rc-link-text">' . $item['anchor_text'] . '</span>';
+                            } elseif ( $icon_position === 'right' ) {
+                                echo '<span class="rc-link-text">' . $item['anchor_text'] . '</span>';
+                                echo '<span class="rc-icon-wrapper rc-icon-right">' . $icon_html . '</span>';
+                            } else { // left (default)
+                                echo '<span class="rc-icon-wrapper rc-icon-left">' . $icon_html . '</span>';
+                                echo '<span class="rc-link-text">' . $item['anchor_text'] . '</span>';
+                            }
+                        } else {
+                            echo '<span class="rc-link-text">' . $item['anchor_text'] . '</span>';
+                        }
+                        ?>
                     </a>
                 <?php endforeach; ?>
             </div>
         </section>
         <?php
+        $output = ob_get_clean();
 
-        return trim( ob_get_clean() );
+        // Add Schema.org structured data
+        if ( $seo_schema_enabled && ! empty( $items ) ) {
+            $schema = self::generate_schema_markup( $cluster, $items, $heading );
+            $output .= $schema;
+        }
+
+        return trim( $output );
     }
 
     protected static function normalize_url( $url ) {
@@ -121,5 +219,87 @@ class ILC_Renderer {
         $text = ucwords( str_replace( '-', ' ', $last ) );
 
         return $text;
+    }
+
+    /**
+     * Normalize Font Awesome class name.
+     * Handles both old (fa fa-icon) and new (fa-solid fa-icon) formats.
+     *
+     * @param string $icon_name Icon class name.
+     * @return string Normalized icon class.
+     */
+    protected static function normalize_fa_class( $icon_name ) {
+        $icon_name = trim( $icon_name );
+        
+        // If it already starts with 'fa-', assume it's just the icon name
+        if ( strpos( $icon_name, 'fa-' ) === 0 ) {
+            // Check if it already has a prefix (fa-solid, fa-regular, etc.)
+            $parts = explode( ' ', $icon_name );
+            if ( count( $parts ) > 1 && strpos( $parts[0], 'fa-' ) === 0 && strpos( $parts[0], 'fa-solid' ) !== 0 && strpos( $parts[0], 'fa-regular' ) !== 0 && strpos( $parts[0], 'fa-brands' ) !== 0 ) {
+                // Old format: fa fa-icon -> convert to fa-solid fa-icon
+                return 'fa-solid ' . $icon_name;
+            }
+            // New format or just icon name
+            if ( strpos( $icon_name, 'fa-solid' ) === 0 || strpos( $icon_name, 'fa-regular' ) === 0 || strpos( $icon_name, 'fa-brands' ) === 0 ) {
+                return $icon_name;
+            }
+            // Just icon name, add fa-solid prefix
+            return 'fa-solid ' . $icon_name;
+        }
+        
+        // If it starts with 'fa ' (old format), convert to new
+        if ( strpos( $icon_name, 'fa ' ) === 0 ) {
+            return str_replace( 'fa ', 'fa-solid ', $icon_name );
+        }
+        
+        // Default: assume it's just the icon name
+        return 'fa-solid fa-' . $icon_name;
+    }
+
+    /**
+     * Build HTML attributes string from array.
+     *
+     * @param array $attrs Attributes array.
+     * @return string HTML attributes string.
+     */
+    protected static function build_attributes( $attrs ) {
+        $output = array();
+        foreach ( $attrs as $key => $value ) {
+            $output[] = esc_attr( $key ) . '="' . esc_attr( $value ) . '"';
+        }
+        return implode( ' ', $output );
+    }
+
+    /**
+     * Generate Schema.org ItemList structured data.
+     *
+     * @param object $cluster Cluster object.
+     * @param array  $items   Link items array.
+     * @param string $heading Cluster heading.
+     * @return string JSON-LD script tag.
+     */
+    protected static function generate_schema_markup( $cluster, $items, $heading ) {
+        $schema = array(
+            '@context' => 'https://schema.org',
+            '@type'    => 'ItemList',
+            'name'     => ! empty( $heading ) ? $heading : __( 'Related Links', 'internal-link-clusters' ),
+        );
+
+        $list_items = array();
+        foreach ( $items as $index => $item ) {
+            $list_items[] = array(
+                '@type'    => 'ListItem',
+                'position' => $index + 1,
+                'name'     => $item['anchor_text'],
+                'url'      => $item['href'],
+            );
+        }
+
+        $schema['itemListElement'] = $list_items;
+        $schema['numberOfItems']   = count( $list_items );
+
+        $json = wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+        return '<script type="application/ld+json">' . $json . '</script>';
     }
 }

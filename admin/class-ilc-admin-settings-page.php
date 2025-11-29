@@ -66,6 +66,106 @@ class ILC_Admin_Settings_Page {
 
                 <hr />
 
+                <h2><?php esc_html_e( 'SEO Settings', 'internal-link-clusters' ); ?></h2>
+                <table class="form-table">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Enable Schema.org markup', 'internal-link-clusters' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="seo_schema_enabled" value="1" <?php checked( $settings['seo_schema_enabled'], 1 ); ?>>
+                                    <?php esc_html_e( 'Add structured data (ItemList) to help search engines understand the link cluster.', 'internal-link-clusters' ); ?>
+                                </label>
+                                <p class="description"><?php esc_html_e( 'This adds JSON-LD schema markup for better search engine visibility.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Add title attributes', 'internal-link-clusters' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="seo_add_title_attr" value="1" <?php checked( $settings['seo_add_title_attr'], 1 ); ?>>
+                                    <?php esc_html_e( 'Add title attributes to links for better SEO and accessibility.', 'internal-link-clusters' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Add aria-label', 'internal-link-clusters' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="seo_add_aria_label" value="1" <?php checked( $settings['seo_add_aria_label'], 1 ); ?>>
+                                    <?php esc_html_e( 'Add aria-label attributes for better screen reader accessibility.', 'internal-link-clusters' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="seo_default_rel"><?php esc_html_e( 'Default rel attribute', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <select name="seo_default_rel" id="seo_default_rel">
+                                    <option value="" <?php selected( $settings['seo_default_rel'], '' ); ?>><?php esc_html_e( 'Follow (default)', 'internal-link-clusters' ); ?></option>
+                                    <option value="nofollow" <?php selected( $settings['seo_default_rel'], 'nofollow' ); ?>><?php esc_html_e( 'Nofollow', 'internal-link-clusters' ); ?></option>
+                                    <option value="nofollow sponsored" <?php selected( $settings['seo_default_rel'], 'nofollow sponsored' ); ?>><?php esc_html_e( 'Nofollow Sponsored', 'internal-link-clusters' ); ?></option>
+                                    <option value="nofollow ugc" <?php selected( $settings['seo_default_rel'], 'nofollow ugc' ); ?>><?php esc_html_e( 'Nofollow UGC', 'internal-link-clusters' ); ?></option>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'Default rel attribute for all links. Can be overridden per link in cluster settings.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Open links in new tab', 'internal-link-clusters' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="seo_open_new_tab" value="1" <?php checked( $settings['seo_open_new_tab'], 1 ); ?>>
+                                    <?php esc_html_e( 'Add target="_blank" with rel="noopener noreferrer" to all links.', 'internal-link-clusters' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="seo_max_links"><?php esc_html_e( 'Maximum links per cluster', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <input type="number" name="seo_max_links" id="seo_max_links" value="<?php echo esc_attr( $settings['seo_max_links'] ); ?>" class="small-text" min="1">
+                                <p class="description"><?php esc_html_e( 'Limit the number of links displayed (leave empty for no limit). Helps with SEO by avoiding too many links on one page.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr />
+
+                <h2><?php esc_html_e( 'Icon Settings', 'internal-link-clusters' ); ?></h2>
+                <table class="form-table">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Enable Font Awesome', 'internal-link-clusters' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="icon_enable_fontawesome" value="1" <?php checked( $settings['icon_enable_fontawesome'], 1 ); ?>>
+                                    <?php esc_html_e( 'Load Font Awesome library (v6.4.0) for icon support.', 'internal-link-clusters' ); ?>
+                                </label>
+                                <p class="description"><?php esc_html_e( 'Uncheck if your theme already includes Font Awesome.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="icon_position"><?php esc_html_e( 'Default Icon Position', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <select name="icon_position" id="icon_position">
+                                    <option value="left" <?php selected( $settings['icon_position'], 'left' ); ?>><?php esc_html_e( 'Left of text', 'internal-link-clusters' ); ?></option>
+                                    <option value="right" <?php selected( $settings['icon_position'], 'right' ); ?>><?php esc_html_e( 'Right of text', 'internal-link-clusters' ); ?></option>
+                                    <option value="above" <?php selected( $settings['icon_position'], 'above' ); ?>><?php esc_html_e( 'Above text', 'internal-link-clusters' ); ?></option>
+                                </select>
+                                <p class="description"><?php esc_html_e( 'Default position for icons. Can be overridden per link.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="icon_color_default"><?php esc_html_e( 'Default Icon Color', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <input type="text" name="icon_color_default" id="icon_color_default" value="<?php echo esc_attr( $settings['icon_color_default'] ); ?>" class="ilc-color-picker" data-default-color="">
+                                <p class="description"><?php esc_html_e( 'Default color for icons. Leave empty to inherit text color. Can be overridden per link.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr />
+
                 <h2><?php esc_html_e( 'Styling', 'internal-link-clusters' ); ?></h2>
                 <table class="form-table">
                     <tbody>

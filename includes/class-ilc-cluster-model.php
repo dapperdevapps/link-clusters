@@ -121,6 +121,7 @@ class ILC_Cluster_Model {
             'subtitle'  => isset( $data['subtitle'] ) ? $data['subtitle'] : '',
             'style'     => isset( $data['style'] ) ? $data['style'] : 'default',
             'is_active' => isset( $data['is_active'] ) ? (int) $data['is_active'] : 1,
+            'css_class' => isset( $data['css_class'] ) ? sanitize_html_class( $data['css_class'] ) : '',
         );
 
         if ( $id ) {
@@ -128,7 +129,7 @@ class ILC_Cluster_Model {
                 $table,
                 $fields,
                 array( 'id' => (int) $id ),
-                array( '%s', '%s', '%s', '%s', '%s', '%d' ),
+                array( '%s', '%s', '%s', '%s', '%s', '%d', '%s' ),
                 array( '%d' )
             );
 
@@ -137,7 +138,7 @@ class ILC_Cluster_Model {
             $inserted = $wpdb->insert(
                 $table,
                 $fields,
-                array( '%s', '%s', '%s', '%s', '%s', '%d' )
+                array( '%s', '%s', '%s', '%s', '%s', '%d', '%s' )
             );
 
             if ( $inserted ) {
@@ -171,12 +172,16 @@ class ILC_Cluster_Model {
             $wpdb->update(
                 $urls_table,
                 array(
-                    'url'         => $item['url'],
-                    'anchor_text' => $item['anchor_text'],
-                    'sort_order'  => (int) $item['sort_order'],
+                    'url'           => $item['url'],
+                    'anchor_text'  => $item['anchor_text'],
+                    'sort_order'   => (int) $item['sort_order'],
+                    'rel_attribute' => isset( $item['rel_attribute'] ) ? sanitize_text_field( $item['rel_attribute'] ) : '',
+                    'css_class'    => isset( $item['css_class'] ) ? sanitize_html_class( $item['css_class'] ) : '',
+                    'icon_name'    => isset( $item['icon_name'] ) ? sanitize_text_field( $item['icon_name'] ) : '',
+                    'icon_color'   => isset( $item['icon_color'] ) ? sanitize_hex_color( $item['icon_color'] ) : '',
                 ),
                 array( 'id' => (int) $item['id'] ),
-                array( '%s', '%s', '%d' ),
+                array( '%s', '%s', '%d', '%s', '%s', '%s', '%s' ),
                 array( '%d' )
             );
         }
@@ -190,14 +195,18 @@ class ILC_Cluster_Model {
         $wpdb->insert(
             $urls_table,
             array(
-                'cluster_id'  => (int) $cluster_id,
-                'url'         => isset( $data['url'] ) ? $data['url'] : '',
-                'post_id'     => ! empty( $data['post_id'] ) ? (int) $data['post_id'] : null,
-                'anchor_text' => isset( $data['anchor_text'] ) ? $data['anchor_text'] : '',
-                'is_hub'      => ! empty( $data['is_hub'] ) ? 1 : 0,
-                'sort_order'  => isset( $data['sort_order'] ) ? (int) $data['sort_order'] : 0,
+                'cluster_id'    => (int) $cluster_id,
+                'url'           => isset( $data['url'] ) ? $data['url'] : '',
+                'post_id'       => ! empty( $data['post_id'] ) ? (int) $data['post_id'] : null,
+                'anchor_text'   => isset( $data['anchor_text'] ) ? $data['anchor_text'] : '',
+                'is_hub'        => ! empty( $data['is_hub'] ) ? 1 : 0,
+                'sort_order'    => isset( $data['sort_order'] ) ? (int) $data['sort_order'] : 0,
+                'rel_attribute' => isset( $data['rel_attribute'] ) ? sanitize_text_field( $data['rel_attribute'] ) : '',
+                'css_class'     => isset( $data['css_class'] ) ? sanitize_html_class( $data['css_class'] ) : '',
+                'icon_name'     => isset( $data['icon_name'] ) ? sanitize_text_field( $data['icon_name'] ) : '',
+                'icon_color'    => isset( $data['icon_color'] ) ? sanitize_hex_color( $data['icon_color'] ) : '',
             ),
-            array( '%d', '%s', '%d', '%s', '%d', '%d' )
+            array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s' )
         );
     }
 

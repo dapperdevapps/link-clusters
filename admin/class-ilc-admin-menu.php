@@ -55,21 +55,20 @@ class ILC_Admin_Menu {
      * @param string $hook Current admin page hook.
      */
     public static function enqueue_admin_scripts( $hook ) {
-        // Only load on settings page - check if hook contains ilc-settings
-        if ( strpos( $hook, 'ilc-settings' ) === false ) {
-            return;
+        // Load color picker on settings and clusters pages
+        if ( strpos( $hook, 'ilc-settings' ) !== false || strpos( $hook, 'ilc-clusters' ) !== false ) {
+            // Enqueue WordPress color picker
+            wp_enqueue_style( 'wp-color-picker' );
+            wp_enqueue_script( 'wp-color-picker' );
+
+            // Enqueue custom script to initialize color pickers
+            wp_add_inline_script(
+                'wp-color-picker',
+                'jQuery(document).ready(function($) {
+                    $(".ilc-color-picker").wpColorPicker();
+                    $(".ilc-color-picker-small").wpColorPicker();
+                });'
+            );
         }
-
-        // Enqueue WordPress color picker
-        wp_enqueue_style( 'wp-color-picker' );
-        wp_enqueue_script( 'wp-color-picker' );
-
-        // Enqueue custom script to initialize color pickers
-        wp_add_inline_script(
-            'wp-color-picker',
-            'jQuery(document).ready(function($) {
-                $(".ilc-color-picker").wpColorPicker();
-            });'
-        );
     }
 }
