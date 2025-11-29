@@ -118,25 +118,20 @@
 }
 
 .ilc-icon-item i {
-    /* Match Visual Composer's exact Font Awesome styling - use !important to override theme conflicts */
+    /* Use existing Font Awesome CSS - match Visual Composer format */
     display: inline-block !important;
-    font-family: FontAwesome !important;
-    font-style: normal !important;
-    font-weight: normal !important;
-    font-variant: normal !important;
-    text-transform: none !important;
-    line-height: 1 !important;
+    font: normal normal normal 14px/1 FontAwesome !important;
     font-size: 24px !important;
     text-rendering: auto !important;
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
-    speak: none !important;
     color: #333 !important;
     margin-bottom: 8px !important;
+    line-height: 1 !important;
 }
 
-/* Ensure pseudo-elements are displayed and styled correctly */
-.ilc-icon-item i:before {
+/* Font Awesome 4 uses :before pseudo-element - ensure it's styled correctly */
+.ilc-icon-item i.fa:before {
     display: inline-block !important;
     font-family: FontAwesome !important;
     font-weight: normal !important;
@@ -144,7 +139,18 @@
     font-variant: normal !important;
     text-transform: none !important;
     speak: none !important;
-    line-height: inherit !important;
+    text-decoration: inherit !important;
+    width: 1em !important;
+    text-align: center !important;
+}
+
+/* Override any fa-solid, fa-regular, fa-brands classes that might be added */
+.ilc-icon-item i.fa-solid,
+.ilc-icon-item i.fa-regular,
+.ilc-icon-item i.fa-brands {
+    /* Force Font Awesome 4 format */
+    font-family: FontAwesome !important;
+    font-weight: normal !important;
 }
 
 .ilc-icon-item .ilc-icon-name {

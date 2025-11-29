@@ -112,6 +112,9 @@
 
     // Get correct icon class format - use FA 4/5 format (fa fa-icon) since that's what works
     function getIconClass(iconName) {
+        // Remove any existing prefixes (fa-solid, fa-regular, fa-brands, or standalone fa)
+        iconName = iconName.replace(/^(fa-solid|fa-regular|fa-brands|fa)\s+/, '');
+        
         // Ensure icon name has fa- prefix
         if (!iconName.startsWith('fa-')) {
             iconName = 'fa-' + iconName;
@@ -131,9 +134,26 @@
         );
 
         filteredIcons.forEach(icon => {
-            const iconClass = getIconClass(icon);
-            const displayName = icon.replace(/^fa-/, '');
-            const $icon = $('<div class="ilc-icon-item" data-icon="' + icon + '">' +
+            // Clean icon name - remove any existing prefixes
+            let cleanIcon = String(icon).trim();
+            
+            // Remove fa-solid, fa-regular, fa-brands prefixes (but keep the icon name)
+            cleanIcon = cleanIcon.replace(/^(fa-solid|fa-regular|fa-brands)\s+/, '');
+            
+            // If it starts with just 'fa ' (space), remove that too
+            cleanIcon = cleanIcon.replace(/^fa\s+/, '');
+            
+            // Ensure it starts with fa- (add if missing)
+            if (!cleanIcon.startsWith('fa-')) {
+                cleanIcon = 'fa-' + cleanIcon;
+            }
+            
+            // Always use 'fa fa-icon' format (Font Awesome 4/5) - same as Visual Composer
+            const iconClass = 'fa ' + cleanIcon;
+            const displayName = cleanIcon.replace(/^fa-/, '');
+            
+            // Create the icon element - ensure we use the correct format
+            const $icon = $('<div class="ilc-icon-item" data-icon="' + cleanIcon + '">' +
                 '<i class="' + iconClass + '"></i>' +
                 '<span class="ilc-icon-name">' + displayName + '</span>' +
                 '</div>');
