@@ -126,17 +126,11 @@
     font-variant: normal;
     text-rendering: auto;
     line-height: 1;
-    /* Try all possible Font Awesome font families */
-    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", "FontAwesome", "FontAwesome5", "FontAwesome6";
-    font-weight: 900;
+    /* Use FontAwesome font family (FA 4/5 format) - same as Visual Composer */
+    font-family: "FontAwesome";
+    font-weight: normal;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-}
-
-/* Font Awesome 4/5 support - override font-weight */
-.ilc-icon-item i.fa:not(.fa-solid):not(.fa-regular):not(.fa-brands) {
-    font-family: "FontAwesome", "Font Awesome 5 Free", "Font Awesome 5 Pro", "Font Awesome 6 Free", "Font Awesome 6 Pro";
-    font-weight: normal;
 }
 
 /* Ensure pseudo-elements are displayed */
