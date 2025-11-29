@@ -110,17 +110,19 @@
         bindModalEvents();
     }
 
-    // Get correct icon class format - use FA 4/5 format (fa fa-icon) since that's what works
+    // Get correct icon class format - use FA 4/5 format (fa fa-icon) - EXACTLY like working example
+    // Working example: <i class="fa czico-082-maps-and-flags"></i>
+    // So we need: <i class="fa fa-phone"></i> (not fa-solid fa-phone)
     function getIconClass(iconName) {
         // Remove any existing prefixes (fa-solid, fa-regular, fa-brands, or standalone fa)
-        iconName = iconName.replace(/^(fa-solid|fa-regular|fa-brands|fa)\s+/, '');
+        iconName = String(iconName).trim().replace(/^(fa-solid|fa-regular|fa-brands|fa)\s+/, '');
         
         // Ensure icon name has fa- prefix
         if (!iconName.startsWith('fa-')) {
             iconName = 'fa-' + iconName;
         }
         
-        // Use Font Awesome 4/5 format (fa fa-icon) - this is what Visual Composer uses and works on this site
+        // Use Font Awesome 4/5 format: 'fa fa-icon' (space between fa and icon name)
         return 'fa ' + iconName;
     }
 
@@ -137,22 +139,21 @@
             // Clean icon name - remove any existing prefixes
             let cleanIcon = String(icon).trim();
             
-            // Remove fa-solid, fa-regular, fa-brands prefixes (but keep the icon name)
-            cleanIcon = cleanIcon.replace(/^(fa-solid|fa-regular|fa-brands)\s+/, '');
-            
-            // If it starts with just 'fa ' (space), remove that too
-            cleanIcon = cleanIcon.replace(/^fa\s+/, '');
+            // Remove fa-solid, fa-regular, fa-brands, or standalone fa prefix
+            cleanIcon = cleanIcon.replace(/^(fa-solid|fa-regular|fa-brands|fa)\s+/, '');
             
             // Ensure it starts with fa- (add if missing)
             if (!cleanIcon.startsWith('fa-')) {
                 cleanIcon = 'fa-' + cleanIcon;
             }
             
-            // Always use 'fa fa-icon' format (Font Awesome 4/5) - same as Visual Composer
+            // Always use 'fa fa-icon' format (Font Awesome 4/5) - EXACTLY like working example
+            // Working: <i class="fa czico-082-maps-and-flags"></i>
+            // So we need: <i class="fa fa-phone"></i>
             const iconClass = 'fa ' + cleanIcon;
             const displayName = cleanIcon.replace(/^fa-/, '');
             
-            // Create the icon element - ensure we use the correct format
+            // Create the icon element - match working example structure
             const $icon = $('<div class="ilc-icon-item" data-icon="' + cleanIcon + '">' +
                 '<i class="' + iconClass + '"></i>' +
                 '<span class="ilc-icon-name">' + displayName + '</span>' +
@@ -161,8 +162,9 @@
         });
 
         // Bind click events
-        $('.ilc-icon-item').on('click', function() {
+        $('.ilc-icon-item').off('click').on('click', function() {
             const iconName = $(this).data('icon');
+            // Ensure we save in 'fa fa-icon' format (not fa-solid)
             selectIcon(iconName);
         });
     }
@@ -206,7 +208,20 @@
     function selectIcon(iconName) {
         const $input = $('#ilc-icon-picker-modal').data('target-input');
         if ($input && $input.length) {
-            $input.val(iconName).trigger('change');
+            // Ensure icon is in 'fa-icon' format (data-icon already has this)
+            // Save just the icon name (e.g., 'fa-phone'), user can add 'fa ' prefix if needed
+            // Or save as 'fa fa-icon' format to match working example
+            let cleanIcon = String(iconName).trim();
+            // Remove any fa-solid, fa-regular, fa-brands prefixes
+            cleanIcon = cleanIcon.replace(/^(fa-solid|fa-regular|fa-brands)\s+/, '');
+            // Remove standalone 'fa ' prefix if present
+            cleanIcon = cleanIcon.replace(/^fa\s+/, '');
+            // Ensure it starts with fa-
+            if (!cleanIcon.startsWith('fa-')) {
+                cleanIcon = 'fa-' + cleanIcon;
+            }
+            // Save in 'fa fa-icon' format to match working example
+            $input.val('fa ' + cleanIcon).trigger('change');
         }
         closeIconPicker();
     }
