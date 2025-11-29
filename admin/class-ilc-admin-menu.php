@@ -69,6 +69,36 @@ class ILC_Admin_Menu {
                     $(".ilc-color-picker-small").wpColorPicker();
                 });'
             );
+
+            // Enqueue icon picker (only on clusters page)
+            if ( strpos( $hook, 'ilc-clusters' ) !== false ) {
+                wp_enqueue_style(
+                    'ilc-icon-picker',
+                    ILC_PLUGIN_URL . 'admin/css/ilc-icon-picker.css',
+                    array(),
+                    ILC_VERSION
+                );
+
+                wp_enqueue_script(
+                    'ilc-icon-picker',
+                    ILC_PLUGIN_URL . 'admin/js/ilc-icon-picker.js',
+                    array( 'jquery' ),
+                    ILC_VERSION,
+                    true
+                );
+
+                // Localize script with translations
+                wp_localize_script(
+                    'ilc-icon-picker',
+                    'ilcIconPickerL10n',
+                    array(
+                        'pickIcon'   => __( 'Pick Icon', 'internal-link-clusters' ),
+                        'selectIcon' => __( 'Select Font Awesome Icon', 'internal-link-clusters' ),
+                        'searchIcons' => __( 'Search icons...', 'internal-link-clusters' ),
+                        'cancel'     => __( 'Cancel', 'internal-link-clusters' ),
+                    )
+                );
+            }
         }
     }
 }
