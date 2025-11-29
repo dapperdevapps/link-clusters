@@ -73,6 +73,7 @@ class ILC_Admin_Menu {
             // Enqueue icon picker (only on clusters page)
             if ( strpos( $hook, 'ilc-clusters' ) !== false ) {
                 // Don't enqueue Font Awesome - use what's already loaded on the site
+                // Minimal CSS - just layout, let existing Font Awesome CSS handle icons
                 wp_enqueue_style(
                     'ilc-icon-picker',
                     ILC_PLUGIN_URL . 'admin/css/ilc-icon-picker.css',
