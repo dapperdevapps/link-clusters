@@ -164,6 +164,9 @@ class ILC_Cluster_Model {
 
         $urls_table = $wpdb->prefix . 'ilc_cluster_urls';
 
+        // Ensure columns exist (for existing installations)
+        ILC_Installer::maybe_add_columns();
+
         foreach ( $items as $item ) {
             if ( empty( $item['id'] ) ) {
                 continue;
@@ -172,9 +175,9 @@ class ILC_Cluster_Model {
             $wpdb->update(
                 $urls_table,
                 array(
-                    'url'           => $item['url'],
-                    'anchor_text'  => $item['anchor_text'],
-                    'sort_order'   => (int) $item['sort_order'],
+                    'url'           => isset( $item['url'] ) ? $item['url'] : '',
+                    'anchor_text'  => isset( $item['anchor_text'] ) ? $item['anchor_text'] : '',
+                    'sort_order'   => isset( $item['sort_order'] ) ? (int) $item['sort_order'] : 0,
                     'rel_attribute' => isset( $item['rel_attribute'] ) ? sanitize_text_field( $item['rel_attribute'] ) : '',
                     'css_class'    => isset( $item['css_class'] ) ? sanitize_html_class( $item['css_class'] ) : '',
                     'icon_name'    => isset( $item['icon_name'] ) ? sanitize_text_field( $item['icon_name'] ) : '',

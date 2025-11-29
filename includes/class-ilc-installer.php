@@ -54,8 +54,9 @@ class ILC_Installer {
 
     /**
      * Add new columns to existing database tables if they don't exist.
+     * Made public so it can be called from other classes.
      */
-    protected static function maybe_add_columns() {
+    public static function maybe_add_columns() {
         global $wpdb;
 
         $clusters_table = $wpdb->prefix . 'ilc_clusters';

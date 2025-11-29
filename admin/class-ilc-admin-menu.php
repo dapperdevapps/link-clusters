@@ -72,10 +72,18 @@ class ILC_Admin_Menu {
 
             // Enqueue icon picker (only on clusters page)
             if ( strpos( $hook, 'ilc-clusters' ) !== false ) {
+                // Enqueue Font Awesome for icon picker (use CDN version for admin)
+                wp_enqueue_style(
+                    'ilc-fontawesome-admin',
+                    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+                    array(),
+                    '4.7.0'
+                );
+
                 wp_enqueue_style(
                     'ilc-icon-picker',
                     ILC_PLUGIN_URL . 'admin/css/ilc-icon-picker.css',
-                    array(),
+                    array( 'ilc-fontawesome-admin' ),
                     ILC_VERSION
                 );
 
