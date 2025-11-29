@@ -168,36 +168,95 @@ class ILC_Admin_Bulk_Builder_Page {
     }
 
     /**
-     * Cluster URLs by their first path segment.
+     * Cluster URLs using a two-pass, industry-agnostic algorithm.
+     *
+     * Pass 1: Collect "base keys" from multi-segment paths (e.g., /epoxy-flooring/epoxy-flooring-auburn-ga/).
+     * Pass 2: Assign cluster keys, matching single-slug URLs to known base keys when possible.
      *
      * @param array $urls Array of URL strings.
-     * @return array Associative array of clusters.
+     * @return array Associative array of clusters (filtered to clusters with 2+ URLs).
      */
     protected static function cluster_urls_by_path( $urls ) {
-        $clusters = array();
+        // Pass 1: Collect base keys from multi-segment paths.
+        $base_keys = array();
 
         foreach ( $urls as $url ) {
             $parsed = wp_parse_url( $url );
-            $path   = isset( $parsed['path'] ) ? $parsed['path'] : '/';
-            $path   = trim( $path, '/' );
+            $path   = isset( $parsed['path'] ) ? trim( $parsed['path'], '/' ) : '';
 
             if ( empty( $path ) ) {
-                // Group under 'root' cluster
-                $key = 'root';
-            } else {
-                $segments = explode( '/', $path );
-                $key      = $segments[0];
+                continue;
             }
 
-            // Sanitize key for use as array index
-            $safe_key = sanitize_title( $key );
+            $segments = explode( '/', $path );
+
+            // Only consider multi-segment paths (2+ segments).
+            if ( count( $segments ) >= 2 ) {
+                $base_key = sanitize_title( $segments[0] );
+                if ( ! empty( $base_key ) ) {
+                    $base_keys[ $base_key ] = true;
+                }
+            }
+        }
+
+        // Pass 2: Assign cluster key for each URL.
+        $clusters = array();
+
+        foreach ( $urls as $url ) {
+            $parsed   = wp_parse_url( $url );
+            $path     = isset( $parsed['path'] ) ? trim( $parsed['path'], '/' ) : '';
+            $segments = $path === '' ? array() : explode( '/', $path );
+
+            $cluster_key = null;
+
+            if ( count( $segments ) >= 2 ) {
+                // Multi-level path, e.g., /epoxy-flooring/epoxy-flooring-auburn-ga/.
+                // If second segment starts with first segment, use the first segment as key.
+                if ( strpos( $segments[1], $segments[0] ) === 0 ) {
+                    $cluster_key = $segments[0];
+                } else {
+                    // Default for multi-segment paths: cluster by first segment.
+                    $cluster_key = $segments[0];
+                }
+            } elseif ( count( $segments ) === 1 ) {
+                // Single-slug URL, e.g., /epoxy-flooring-auburn-ga/.
+                $slug = $segments[0];
+
+                // Try to match this slug to one of the known base keys from Pass 1.
+                $matched_base = null;
+                foreach ( array_keys( $base_keys ) as $base ) {
+                    // e.g., "epoxy-flooring-auburn-ga" starts with "epoxy-flooring-".
+                    if ( $slug !== $base && strpos( $slug, $base . '-' ) === 0 ) {
+                        $matched_base = $base;
+                        break;
+                    }
+                }
+
+                if ( $matched_base ) {
+                    $cluster_key = $matched_base;
+                } else {
+                    // Fallback: use the slug itself as its own cluster key.
+                    $cluster_key = $slug;
+                }
+            } elseif ( count( $segments ) === 0 ) {
+                // Root URL (homepage).
+                $cluster_key = 'root';
+            }
+
+            // Skip if no cluster key determined.
+            if ( $cluster_key === null ) {
+                continue;
+            }
+
+            // Sanitize key for use as array index.
+            $safe_key = sanitize_title( $cluster_key );
             if ( empty( $safe_key ) ) {
                 $safe_key = 'uncategorized';
             }
 
             if ( ! isset( $clusters[ $safe_key ] ) ) {
-                // Humanize label: replace hyphens/underscores with spaces, title case
-                $label = str_replace( array( '-', '_' ), ' ', $key );
+                // Humanize label: replace hyphens/underscores with spaces, title case.
+                $label = str_replace( array( '-', '_' ), ' ', $cluster_key );
                 $label = ucwords( $label );
 
                 $clusters[ $safe_key ] = array(
@@ -210,10 +269,18 @@ class ILC_Admin_Bulk_Builder_Page {
             $clusters[ $safe_key ]['urls'][] = $url;
         }
 
-        // Sort clusters alphabetically by key
-        ksort( $clusters );
+        // Filter to only include clusters with at least 2 URLs.
+        $filtered_clusters = array();
+        foreach ( $clusters as $key => $cluster ) {
+            if ( ! empty( $cluster['urls'] ) && count( $cluster['urls'] ) >= 2 ) {
+                $filtered_clusters[ $key ] = $cluster;
+            }
+        }
 
-        return $clusters;
+        // Sort clusters alphabetically by key.
+        ksort( $filtered_clusters );
+
+        return $filtered_clusters;
     }
 
     /**
