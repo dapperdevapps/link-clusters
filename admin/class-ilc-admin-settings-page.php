@@ -71,31 +71,31 @@ class ILC_Admin_Settings_Page {
                     <tbody>
                         <tr>
                             <th scope="row"><label for="style_bg"><?php esc_html_e( 'Cluster background', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_bg" id="style_bg" value="<?php echo esc_attr( $settings['style_bg'] ); ?>" class="regular-text" placeholder="#f7f7f7"></td>
+                            <td><input type="text" name="style_bg" id="style_bg" value="<?php echo esc_attr( $settings['style_bg'] ); ?>" class="ilc-color-picker" data-default-color="#f7f7f7"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_heading"><?php esc_html_e( 'Heading color', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_heading" id="style_heading" value="<?php echo esc_attr( $settings['style_heading'] ); ?>" class="regular-text" placeholder="#000000"></td>
+                            <td><input type="text" name="style_heading" id="style_heading" value="<?php echo esc_attr( $settings['style_heading'] ); ?>" class="ilc-color-picker" data-default-color="#000000"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_subtitle"><?php esc_html_e( 'Subtitle color', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_subtitle" id="style_subtitle" value="<?php echo esc_attr( $settings['style_subtitle'] ); ?>" class="regular-text" placeholder="#555555"></td>
+                            <td><input type="text" name="style_subtitle" id="style_subtitle" value="<?php echo esc_attr( $settings['style_subtitle'] ); ?>" class="ilc-color-picker" data-default-color="#555555"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_box_bg"><?php esc_html_e( 'Box background', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_box_bg" id="style_box_bg" value="<?php echo esc_attr( $settings['style_box_bg'] ); ?>" class="regular-text" placeholder="#ffffff"></td>
+                            <td><input type="text" name="style_box_bg" id="style_box_bg" value="<?php echo esc_attr( $settings['style_box_bg'] ); ?>" class="ilc-color-picker" data-default-color="#ffffff"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_box_text"><?php esc_html_e( 'Box text color', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_box_text" id="style_box_text" value="<?php echo esc_attr( $settings['style_box_text'] ); ?>" class="regular-text" placeholder="#222222"></td>
+                            <td><input type="text" name="style_box_text" id="style_box_text" value="<?php echo esc_attr( $settings['style_box_text'] ); ?>" class="ilc-color-picker" data-default-color="#222222"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_box_hover_bg"><?php esc_html_e( 'Box hover background', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_box_hover_bg" id="style_box_hover_bg" value="<?php echo esc_attr( $settings['style_box_hover_bg'] ); ?>" class="regular-text" placeholder="#f0f0f0"></td>
+                            <td><input type="text" name="style_box_hover_bg" id="style_box_hover_bg" value="<?php echo esc_attr( $settings['style_box_hover_bg'] ); ?>" class="ilc-color-picker" data-default-color="#f0f0f0"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_box_border"><?php esc_html_e( 'Box border color', 'internal-link-clusters' ); ?></label></th>
-                            <td><input type="text" name="style_box_border" id="style_box_border" value="<?php echo esc_attr( $settings['style_box_border'] ); ?>" class="regular-text" placeholder="#e0e0e0"></td>
+                            <td><input type="text" name="style_box_border" id="style_box_border" value="<?php echo esc_attr( $settings['style_box_border'] ); ?>" class="ilc-color-picker" data-default-color="#e0e0e0"></td>
                         </tr>
                         <tr>
                             <th scope="row"><label for="style_radius"><?php esc_html_e( 'Border radius (px)', 'internal-link-clusters' ); ?></label></th>

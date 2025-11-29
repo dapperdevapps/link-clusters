@@ -7,6 +7,7 @@ class ILC_Admin_Menu {
 
     public static function init() {
         add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_scripts' ) );
     }
 
     public static function register_menu() {
@@ -45,6 +46,30 @@ class ILC_Admin_Menu {
             'manage_options',
             'ilc-settings',
             array( 'ILC_Admin_Settings_Page', 'render' )
+        );
+    }
+
+    /**
+     * Enqueue admin scripts and styles.
+     *
+     * @param string $hook Current admin page hook.
+     */
+    public static function enqueue_admin_scripts( $hook ) {
+        // Only load on settings page - check if hook contains ilc-settings
+        if ( strpos( $hook, 'ilc-settings' ) === false ) {
+            return;
+        }
+
+        // Enqueue WordPress color picker
+        wp_enqueue_style( 'wp-color-picker' );
+        wp_enqueue_script( 'wp-color-picker' );
+
+        // Enqueue custom script to initialize color pickers
+        wp_add_inline_script(
+            'wp-color-picker',
+            'jQuery(document).ready(function($) {
+                $(".ilc-color-picker").wpColorPicker();
+            });'
         );
     }
 }
