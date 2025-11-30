@@ -271,7 +271,10 @@ class ILC_Admin_Clusters_Page {
                                             <input type="text" name="anchor_text[]" value="<?php echo esc_attr( $row->anchor_text ); ?>" class="regular-text">
                                         </td>
                                         <td>
-                                            <input type="text" name="icon_name[]" value="<?php echo esc_attr( $icon_name ); ?>" class="regular-text ilc-icon-name-input" placeholder="fa-home">
+                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                <input type="text" name="icon_name[]" value="<?php echo esc_attr( $icon_name ); ?>" class="regular-text ilc-icon-name-input" placeholder="fa-home" style="flex: 1;">
+                                                <button type="button" class="button ilc-icon-picker-btn"><i class="fas fa-icons"></i> <?php esc_html_e( 'Pick Icon', 'internal-link-clusters' ); ?></button>
+                                            </div>
                                             <p class="description" style="font-size:11px; margin:2px 0 0;"><?php esc_html_e( 'Font Awesome class (e.g., fa-home)', 'internal-link-clusters' ); ?></p>
                                         </td>
                                         <td>
@@ -321,7 +324,10 @@ class ILC_Admin_Clusters_Page {
                             <tr>
                                 <th scope="row"><label for="ilc-new-icon"><?php esc_html_e( 'Icon (Font Awesome)', 'internal-link-clusters' ); ?></label></th>
                                 <td>
-                                    <input name="new_icon_name" type="text" id="ilc-new-icon" class="regular-text ilc-icon-name-input" placeholder="fa-home">
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <input name="new_icon_name" type="text" id="ilc-new-icon" class="regular-text ilc-icon-name-input" placeholder="fa-home" style="flex: 1;">
+                                        <button type="button" class="button ilc-icon-picker-btn"><i class="fas fa-icons"></i> <?php esc_html_e( 'Pick Icon', 'internal-link-clusters' ); ?></button>
+                                    </div>
                                     <p class="description"><?php esc_html_e( 'Font Awesome icon class (e.g., fa-home, fa-arrow-right)', 'internal-link-clusters' ); ?></p>
                                 </td>
                             </tr>

@@ -79,8 +79,8 @@ class ILC_Admin_Menu {
                 });'
             );
 
-            // Enqueue icon picker (only on clusters page)
-            if ( strpos( $hook, 'ilc-clusters' ) !== false ) {
+            // Enqueue icon picker (on clusters and bulk builder pages)
+            if ( strpos( $hook, 'ilc-clusters' ) !== false || strpos( $hook, 'ilc-bulk-builder' ) !== false ) {
                 // Don't enqueue Font Awesome - use what's already loaded on the site
                 // Minimal CSS - just layout, let existing Font Awesome CSS handle icons
                 wp_enqueue_style(
