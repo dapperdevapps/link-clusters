@@ -1,106 +1,117 @@
-/* Base rc cluster CSS - most colors are overridden via inline CSS from settings */
+/**
+ * Internal Link Clusters - Theme-Agnostic CSS
+ *
+ * This stylesheet is designed to work across ALL WordPress themes and page builders:
+ * - Elementor, WPBakery, Bridge, Divi, Avada, Gutenberg, Beaver Builder, etc.
+ *
+ * Key principles:
+ * - Uses only plugin-specific class names (.rc-*)
+ * - No reliance on theme grid systems (.container, .row, .col, etc.)
+ * - No reliance on builder classes (.vc_row, .elementor-section, etc.)
+ * - CSS resets to override theme conflicts
+ * - Self-contained, responsive layout
+ */
+
+/* =====================================================
+   Base Reset - Override theme conflicts
+   ===================================================== */
+
+/* Reset box model for all cluster elements */
+.rc-cluster,
+.rc-cluster *,
+.rc-cluster *::before,
+.rc-cluster *::after {
+    box-sizing: border-box;
+}
+
+/* Ensure cluster doesn't inherit problematic theme styles */
 .rc-cluster {
+    all: unset;
+    display: block;
     margin: 2.5rem 0;
     padding: 2rem 1.5rem;
     background: #f7f7f7;
     border-radius: 12px;
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+    color: inherit;
+    width: 100%;
+    max-width: 100%;
+    clear: both;
 }
 
-/* Fullwidth layout: mimic WPBakery "Stretch row" */
+/* Override potential theme container constraints */
+.rc-cluster {
+    float: none !important;
+    position: relative;
+}
+
+/* =====================================================
+   Fullwidth Layout Mode
+   ===================================================== */
+
+/* Mimic WPBakery/Elementor "Stretch row" behavior */
 .rc-cluster--fullwidth {
     position: relative;
     left: 50%;
     right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
     width: 100vw;
     max-width: 100vw;
+    padding-left: 2rem;
+    padding-right: 2rem;
 }
 
-/* Optional: keep inner content visually aligned when theme content has padding */
+/* Keep inner content centered in fullwidth mode */
 .rc-cluster--fullwidth .rc-grid {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
+
+/* =====================================================
+   Typography - Heading & Subtitle
+   ===================================================== */
 
 .rc-heading {
-    margin: 0 0 0.5rem;
+    all: unset;
+    display: block;
+    margin: 0 0 0.5rem 0;
+    padding: 0;
     font-size: 1.5rem;
     font-weight: 700;
+    line-height: 1.3;
     text-align: left;
+    color: inherit;
 }
 
 .rc-subtitle {
-    margin: 0 0 1.5rem;
+    all: unset;
+    display: block;
+    margin: 0 0 1.5rem 0;
+    padding: 0;
     font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.5;
     color: #555555;
+    text-align: left;
 }
 
+/* =====================================================
+   Grid Layout - Self-contained CSS Grid
+   ===================================================== */
+
 .rc-grid {
+    all: unset;
     display: grid;
     grid-template-columns: repeat(1, minmax(0, 1fr));
     gap: 0.75rem;
+    width: 100%;
 }
 
-.rc-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    min-height: 60px;
-    padding: 0.75rem 1rem;
-    background: #ffffff;
-    border-radius: 10px;
-    border: 1px solid #e0e0e0;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: #222222;
-    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-}
-
-.rc-box:hover,
-.rc-box:focus-visible {
-    border-color: #222222;
-    background-color: #f0f0f0;
-    transform: translateY(-1px);
-}
-
-/* Icon positioning */
-.rc-box .rc-icon-wrapper {
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.rc-box .rc-link-text {
-    display: inline-block;
-    vertical-align: middle;
-}
-
-/* Icon left (default) */
-.rc-box .rc-icon-left {
-    margin-right: 0.5rem;
-}
-
-/* Icon right */
-.rc-box .rc-icon-right {
-    margin-left: 0.5rem;
-}
-
-/* Icon above text */
-.rc-box .rc-icon-above {
-    display: block;
-    text-align: center;
-    margin-bottom: 0.5rem;
-    font-size: 1.5em;
-}
-
-.rc-box .rc-icon-above + .rc-link-text {
-    display: block;
-    text-align: center;
-}
-
-/* Responsive columns */
+/* Responsive columns - no reliance on theme breakpoints */
 @media (min-width: 480px) {
     .rc-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -116,5 +127,198 @@
 @media (min-width: 1024px) {
     .rc-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* =====================================================
+   Link Boxes - Individual cluster links
+   ===================================================== */
+
+.rc-box {
+    all: unset;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    text-align: center;
+    min-height: 60px;
+    padding: 0.75rem 1rem;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    text-decoration: none !important;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #222222;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+/* Reset link styles that themes may override */
+a.rc-box,
+a.rc-box:link,
+a.rc-box:visited {
+    text-decoration: none !important;
+    color: #222222;
+}
+
+.rc-box:hover,
+.rc-box:focus,
+.rc-box:focus-visible {
+    border-color: #222222;
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-decoration: none !important;
+    outline: none;
+}
+
+a.rc-box:hover,
+a.rc-box:focus {
+    color: #222222;
+    text-decoration: none !important;
+}
+
+/* =====================================================
+   Icon Support - Font Awesome compatible
+   ===================================================== */
+
+.rc-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rc-link-text {
+    display: inline-block;
+    word-break: break-word;
+}
+
+/* Icon left (default) */
+.rc-icon-left {
+    margin-right: 0.5rem;
+}
+
+/* Icon right */
+.rc-icon-right {
+    margin-left: 0.5rem;
+}
+
+/* Icon above text */
+.rc-icon-above {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    font-size: 1.5em;
+}
+
+/* When icon is above, stack the layout */
+.rc-box:has(.rc-icon-above) {
+    flex-direction: column;
+}
+
+.rc-icon-above + .rc-link-text {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+/* =====================================================
+   Fallback Mode Wrapper
+   ===================================================== */
+
+.ilc-fallback-wrap {
+    display: block;
+    clear: both;
+    width: 100%;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Ensure fallback wrap doesn't get positioned strangely */
+.ilc-fallback-wrap .rc-cluster {
+    margin-top: 0;
+}
+
+/* =====================================================
+   Page Builder Compatibility Overrides
+   ===================================================== */
+
+/* Elementor container reset */
+.elementor .rc-cluster,
+.elementor-widget-shortcode .rc-cluster {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* WPBakery container reset */
+.wpb_content_element .rc-cluster,
+.vc_row .rc-cluster {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Divi container reset */
+.et_pb_module .rc-cluster,
+.et_pb_code .rc-cluster {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Beaver Builder reset */
+.fl-module .rc-cluster {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Gutenberg block reset */
+.wp-block-shortcode .rc-cluster {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* =====================================================
+   Print Styles
+   ===================================================== */
+
+@media print {
+    .rc-cluster {
+        background: none !important;
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+
+    .rc-box {
+        border: 1px solid #ccc;
+        background: none !important;
+    }
+}
+
+/* =====================================================
+   Accessibility Enhancements
+   ===================================================== */
+
+/* Focus visible for keyboard navigation */
+.rc-box:focus-visible {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .rc-box {
+        transition: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .rc-box {
+        border-width: 2px;
     }
 }
