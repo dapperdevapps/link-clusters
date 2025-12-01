@@ -5,13 +5,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ILC_Installer {
 
+    /**
+     * Install or update database tables.
+     */
     public static function install() {
         global $wpdb;
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $clusters_table = $wpdb->prefix . 'ilc_clusters';
-        $urls_table     = $wpdb->prefix . 'ilc_cluster_urls';
+        $clusters_table    = $wpdb->prefix . 'ilc_clusters';
+        $urls_table        = $wpdb->prefix . 'ilc_cluster_urls';
+        $suggestions_table = $wpdb->prefix . 'ilc_link_suggestions';
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -45,8 +49,26 @@ class ILC_Installer {
             KEY post_id (post_id)
         ) $charset_collate;";
 
+        // Link suggestions table for Internal Link Gap Finder
+        $sql_suggestions = "CREATE TABLE $suggestions_table (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            cluster_id bigint(20) unsigned NULL,
+            target_url text NOT NULL,
+            source_post_id bigint(20) unsigned NOT NULL,
+            matched_keyword varchar(255) NOT NULL,
+            confidence float DEFAULT 0 NOT NULL,
+            status varchar(20) DEFAULT 'new' NOT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id),
+            KEY cluster_id (cluster_id),
+            KEY source_post_id (source_post_id),
+            KEY status (status)
+        ) $charset_collate;";
+
         dbDelta( $sql_clusters );
         dbDelta( $sql_urls );
+        dbDelta( $sql_suggestions );
 
         // Add new columns to existing installations
         self::maybe_add_columns();
