@@ -21,8 +21,6 @@ require_once ILC_PLUGIN_DIR . 'includes/class-ilc-cluster-model.php';
 require_once ILC_PLUGIN_DIR . 'includes/class-ilc-renderer.php';
 require_once ILC_PLUGIN_DIR . 'includes/class-ilc-shortcodes.php';
 require_once ILC_PLUGIN_DIR . 'includes/class-ilc-settings.php';
-require_once ILC_PLUGIN_DIR . 'includes/class-ilc-gap-model.php';
-require_once ILC_PLUGIN_DIR . 'includes/class-ilc-gap-finder.php';
 
 if ( is_admin() ) {
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-menu.php';
@@ -30,7 +28,6 @@ if ( is_admin() ) {
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-import-page.php';
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-settings-page.php';
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-bulk-builder-page.php';
-    require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-gap-page.php';
 }
 
 /**

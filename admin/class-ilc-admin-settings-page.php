@@ -166,32 +166,6 @@ class ILC_Admin_Settings_Page {
 
                 <hr />
 
-                <h2><?php esc_html_e( 'Internal Link Gap Finder', 'internal-link-clusters' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Configure how the Link Suggestions feature scans your content for internal linking opportunities.', 'internal-link-clusters' ); ?></p>
-                <table class="form-table">
-                    <tbody>
-                        <tr>
-                            <th scope="row"><label for="gap_post_types"><?php esc_html_e( 'Post types to scan', 'internal-link-clusters' ); ?></label></th>
-                            <td>
-                                <input type="text" name="gap_post_types" id="gap_post_types" class="regular-text" value="<?php echo esc_attr( $settings['gap_post_types'] ); ?>">
-                                <p class="description"><?php esc_html_e( 'Comma-separated list of post types to scan for link opportunities (e.g., page,post).', 'internal-link-clusters' ); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Search in titles', 'internal-link-clusters' ); ?></th>
-                            <td>
-                                <label>
-                                    <input type="checkbox" name="gap_search_title" value="1" <?php checked( $settings['gap_search_title'], 1 ); ?>>
-                                    <?php esc_html_e( 'Also search for keywords in post titles (gives higher confidence score).', 'internal-link-clusters' ); ?>
-                                </label>
-                                <p class="description"><?php esc_html_e( 'When enabled, keyword matches in titles get a +5 confidence bonus.', 'internal-link-clusters' ); ?></p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <hr />
-
                 <h2><?php esc_html_e( 'Styling', 'internal-link-clusters' ); ?></h2>
                 <table class="form-table">
                     <tbody>
