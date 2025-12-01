@@ -32,6 +32,9 @@ class ILC_Settings {
             'icon_position'            => 'left', // left, right, above
             'icon_color_default'       => '', // empty = inherit text color
             'icon_enable_fontawesome' => 1, // Enable Font Awesome loading
+            // Gap Finder defaults
+            'gap_post_types'   => 'page,post', // Post types to scan for internal linking gaps
+            'gap_search_title' => 1, // Whether to search in post titles (in addition to content)
         );
 
         $stored = get_option( self::OPTION_KEY, array() );
@@ -82,6 +85,10 @@ class ILC_Settings {
         $settings['icon_position']            = $icon_position;
         $settings['icon_color_default']       = isset( $data['icon_color_default'] ) ? sanitize_hex_color( $data['icon_color_default'] ) : '';
         $settings['icon_enable_fontawesome']  = ! empty( $data['icon_enable_fontawesome'] ) ? 1 : 0;
+
+        // Gap Finder settings
+        $settings['gap_post_types']   = isset( $data['gap_post_types'] ) ? sanitize_text_field( $data['gap_post_types'] ) : $settings['gap_post_types'];
+        $settings['gap_search_title'] = ! empty( $data['gap_search_title'] ) ? 1 : 0;
 
         update_option( self::OPTION_KEY, $settings );
     }
