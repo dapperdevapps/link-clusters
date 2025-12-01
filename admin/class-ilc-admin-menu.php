@@ -65,6 +65,15 @@ class ILC_Admin_Menu {
             'ilc-gap-finder',
             array( 'ILC_Admin_Gap_Page', 'render' )
         );
+
+        add_submenu_page(
+            'ilc-clusters',
+            __( 'Cluster Generation', 'internal-link-clusters' ),
+            __( 'Cluster Generation', 'internal-link-clusters' ),
+            'manage_options',
+            'ilc-cluster-generation',
+            array( 'ILC_Admin_Cluster_Generation_Page', 'render' )
+        );
     }
 
     /**
