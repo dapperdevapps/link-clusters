@@ -1,45 +1,15 @@
 <?php
-/**
- * ILC_Shortcodes - Universal shortcodes for all page builders.
- *
- * These shortcodes work with:
- * - Elementor (Shortcode widget)
- * - WPBakery (Text Block)
- * - Bridge Theme (HTML block)
- * - Divi (Code module)
- * - Avada (Code block)
- * - Gutenberg (Shortcode block)
- * - Any other builder or theme
- *
- * @package Internal_Link_Clusters
- */
-
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 class ILC_Shortcodes {
 
-    /**
-     * Initialize shortcodes.
-     */
     public static function init() {
-        // Shortcode A: Render a specific cluster by name/slug
         add_shortcode( 'rc_cluster', array( __CLASS__, 'shortcode_cluster' ) );
-
-        // Shortcode B: Auto-display clusters for the current page
         add_shortcode( 'rc_cluster_auto', array( __CLASS__, 'shortcode_cluster_auto' ) );
     }
 
-    /**
-     * Shortcode: [rc_cluster name="cluster-slug"]
-     *
-     * Renders a specific cluster by its slug or name.
-     * Use this when you want to manually place a specific cluster.
-     *
-     * @param array $atts Shortcode attributes.
-     * @return string Cluster HTML or empty string.
-     */
     public static function shortcode_cluster( $atts ) {
         $atts = shortcode_atts(
             array(
@@ -53,20 +23,36 @@ class ILC_Shortcodes {
             return '';
         }
 
-        // Use the renderer's helper method for clean, consistent rendering
-        return ILC_Renderer::render_cluster_by_slug( sanitize_title( $atts['name'] ) );
+        $cluster = ILC_Cluster_Model::get_cluster_by_identifier( $atts['name'] );
+
+        if ( ! $cluster ) {
+            return '';
+        }
+
+        $current_post_id = get_queried_object_id();
+        $current_url     = $current_post_id ? get_permalink( $current_post_id ) : '';
+
+        return ILC_Renderer::render_cluster( $cluster, $current_url, $current_post_id );
     }
 
-    /**
-     * Shortcode: [rc_cluster_auto]
-     *
-     * Automatically displays the cluster associated with the current page.
-     * Use this in page builder widgets/blocks for manual placement.
-     *
-     * @return string Cluster HTML or empty string.
-     */
     public static function shortcode_cluster_auto() {
-        // Use the renderer's helper method for clean, consistent rendering
-        return ILC_Renderer::render_auto_clusters_for_current_post();
+        $current_post_id = get_queried_object_id();
+        $current_url     = $current_post_id ? get_permalink( $current_post_id ) : self::get_current_url();
+
+        $cluster = ILC_Cluster_Model::get_cluster_for_page( $current_post_id, $current_url );
+
+        if ( ! $cluster ) {
+            return '';
+        }
+
+        return ILC_Renderer::render_cluster( $cluster, $current_url, $current_post_id );
+    }
+
+    protected static function get_current_url() {
+        $scheme = is_ssl() ? 'https://' : 'http://';
+        $host   = isset( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '';
+        $uri    = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+
+        return $scheme . $host . $uri;
     }
 }

@@ -43,21 +43,6 @@ class ILC_Admin_Settings_Page {
                                 <p class="description"><?php esc_html_e( 'Comma-separated list of post types (e.g., page,post). Leave blank to apply to all singular post types.', 'internal-link-clusters' ); ?></p>
                             </td>
                         </tr>
-                        <tr>
-                            <th scope="row"><?php esc_html_e( 'Fallback mode (Advanced)', 'internal-link-clusters' ); ?></th>
-                            <td>
-                                <label>
-                                    <input type="checkbox" name="fallback_mode_enabled" value="1" <?php checked( $settings['fallback_mode_enabled'], 1 ); ?>>
-                                    <?php esc_html_e( 'Force clusters in footer for incompatible themes.', 'internal-link-clusters' ); ?>
-                                </label>
-                                <p class="description">
-                                    <?php esc_html_e( 'Enable this if clusters don\'t appear on your theme. Some page builders (Bridge, Avada, Divi) may bypass the_content filter.', 'internal-link-clusters' ); ?>
-                                    <br>
-                                    <strong><?php esc_html_e( 'Alternative:', 'internal-link-clusters' ); ?></strong>
-                                    <?php esc_html_e( 'Use the [rc_cluster_auto] shortcode in a text/code widget for full control.', 'internal-link-clusters' ); ?>
-                                </p>
-                            </td>
-                        </tr>
                     </tbody>
                 </table>
 

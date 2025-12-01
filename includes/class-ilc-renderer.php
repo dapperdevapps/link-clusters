@@ -5,65 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ILC_Renderer {
 
-    /**
-     * Render cluster grid for the current post/page.
-     *
-     * This is a convenience method for theme-agnostic auto-insertion.
-     * It finds the cluster associated with the current page and renders it.
-     *
-     * @return string Cluster HTML or empty string.
-     */
-    public static function render_auto_clusters_for_current_post() {
-        $current_post_id = get_queried_object_id();
-        $current_url     = $current_post_id ? get_permalink( $current_post_id ) : self::get_current_url();
-
-        $cluster = ILC_Cluster_Model::get_cluster_for_page( $current_post_id, $current_url );
-
-        if ( ! $cluster ) {
-            return '';
-        }
-
-        return self::render_cluster( $cluster, $current_url, $current_post_id );
-    }
-
-    /**
-     * Render a specific cluster by its slug or name.
-     *
-     * This is a convenience method for shortcode usage and direct rendering.
-     *
-     * @param string $identifier Cluster slug or name.
-     * @return string Cluster HTML or empty string.
-     */
-    public static function render_cluster_by_slug( $identifier ) {
-        if ( empty( $identifier ) ) {
-            return '';
-        }
-
-        $cluster = ILC_Cluster_Model::get_cluster_by_identifier( $identifier );
-
-        if ( ! $cluster ) {
-            return '';
-        }
-
-        $current_post_id = get_queried_object_id();
-        $current_url     = $current_post_id ? get_permalink( $current_post_id ) : self::get_current_url();
-
-        return self::render_cluster( $cluster, $current_url, $current_post_id );
-    }
-
-    /**
-     * Get current URL from server variables.
-     *
-     * @return string Current URL.
-     */
-    protected static function get_current_url() {
-        $scheme = is_ssl() ? 'https://' : 'http://';
-        $host   = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-        $uri    = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-
-        return $scheme . $host . $uri;
-    }
-
     public static function render_cluster( $cluster, $current_url = null, $current_post_id = null ) {
         if ( ! $cluster || empty( $cluster->id ) ) {
             return '';

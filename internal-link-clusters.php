@@ -60,11 +60,8 @@ function ilc_init_plugin() {
         ILC_Admin_Menu::init();
     }
 
-    // Auto-insert via the_content filter (works with all themes that use the_content)
-    add_filter( 'the_content', 'ilc_append_clusters_to_content' );
-
-    // Fallback mode: render clusters in footer for themes that don't use the_content
-    add_action( 'wp_footer', 'ilc_render_fallback_clusters' );
+    // Auto-insert logic
+    add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
 }
 add_action( 'plugins_loaded', 'ilc_init_plugin' );
 
@@ -130,28 +127,13 @@ function ilc_enqueue_styles() {
 }
 
 /**
- * Append cluster grid to content via the_content filter.
+ * Auto-insert [rc_cluster_auto] into content based on settings.
  *
- * This is the primary, theme-agnostic method for auto-inserting clusters.
- * Works with any theme that properly calls the_content() in its templates.
- *
- * @param string $content The post content.
- * @return string Modified content with cluster grid appended.
+ * @param string $content
+ * @return string
  */
-function ilc_append_clusters_to_content( $content ) {
-    // Don't run in admin
-    if ( is_admin() ) {
-        return $content;
-    }
-
-    // Only on singular pages
+function ilc_maybe_auto_insert_cluster( $content ) {
     if ( ! is_singular() ) {
-        return $content;
-    }
-
-    // Prevent infinite loops and multiple insertions
-    static $already_inserted = false;
-    if ( $already_inserted ) {
         return $content;
     }
 
@@ -161,12 +143,10 @@ function ilc_append_clusters_to_content( $content ) {
 
     $settings = ILC_Settings::get_settings();
 
-    // Check if auto-insert is enabled
     if ( empty( $settings['auto_insert_enabled'] ) ) {
         return $content;
     }
 
-    // Check post type restrictions
     $post_type = get_post_type();
     $allowed   = array();
 
@@ -184,75 +164,11 @@ function ilc_append_clusters_to_content( $content ) {
         return $content;
     }
 
-    // Render the cluster grid
-    $clusters_html = ILC_Renderer::render_auto_clusters_for_current_post();
+    $cluster_html = do_shortcode( '[rc_cluster_auto]' );
 
-    if ( ! $clusters_html ) {
+    if ( ! $cluster_html ) {
         return $content;
     }
 
-    // Mark as inserted to prevent duplicates
-    $already_inserted = true;
-
-    return $content . "\n\n" . $clusters_html;
-}
-
-/**
- * Fallback: Render clusters in footer for themes that don't use the_content filter.
- *
- * This is an advanced fallback for themes like Bridge, Avada, or heavily customized themes
- * that may not run the_content filter on all templates.
- *
- * Only runs if fallback mode is enabled in settings AND the cluster wasn't already
- * inserted via the_content filter.
- */
-function ilc_render_fallback_clusters() {
-    // Only on singular pages
-    if ( ! is_singular() ) {
-        return;
-    }
-
-    if ( ! class_exists( 'ILC_Settings' ) ) {
-        return;
-    }
-
-    $settings = ILC_Settings::get_settings();
-
-    // Check if fallback mode is enabled
-    if ( empty( $settings['fallback_mode_enabled'] ) ) {
-        return;
-    }
-
-    // Check if auto-insert is enabled
-    if ( empty( $settings['auto_insert_enabled'] ) ) {
-        return;
-    }
-
-    // Check post type restrictions
-    $post_type = get_post_type();
-    $allowed   = array();
-
-    if ( ! empty( $settings['auto_insert_post_types'] ) ) {
-        $pieces = explode( ',', $settings['auto_insert_post_types'] );
-        foreach ( $pieces as $p ) {
-            $p = trim( $p );
-            if ( $p !== '' ) {
-                $allowed[] = $p;
-            }
-        }
-    }
-
-    if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
-        return;
-    }
-
-    // Render the cluster grid
-    $clusters_html = ILC_Renderer::render_auto_clusters_for_current_post();
-
-    if ( ! $clusters_html ) {
-        return;
-    }
-
-    // Output in a wrapper div for styling
-    echo '<div class="ilc-fallback-wrap">' . $clusters_html . '</div>';
+    return $content . "\n\n" . $cluster_html;
 }

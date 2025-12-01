@@ -11,7 +11,6 @@ class ILC_Settings {
         $defaults = array(
             'auto_insert_enabled'    => 0,
             'auto_insert_post_types' => 'page,post',
-            'fallback_mode_enabled'  => 0, // Fallback: force clusters in footer for themes that bypass the_content
             'layout_mode'            => 'contained', // contained | fullwidth
             // Styling defaults
             'style_bg'           => '#f7f7f7',
@@ -58,7 +57,6 @@ class ILC_Settings {
 
         $settings['auto_insert_enabled']    = ! empty( $data['auto_insert_enabled'] ) ? 1 : 0;
         $settings['auto_insert_post_types'] = isset( $data['auto_insert_post_types'] ) ? sanitize_text_field( $data['auto_insert_post_types'] ) : $settings['auto_insert_post_types'];
-        $settings['fallback_mode_enabled']  = ! empty( $data['fallback_mode_enabled'] ) ? 1 : 0;
 
         // Layout mode
         $layout_mode = isset( $data['layout_mode'] ) ? sanitize_text_field( $data['layout_mode'] ) : $settings['layout_mode'];
