@@ -35,6 +35,12 @@ class ILC_Settings {
             // Gap Finder defaults
             'gap_post_types'   => 'page,post', // Post types to scan for internal linking gaps
             'gap_search_title' => 1, // Whether to search in post titles (in addition to content)
+            // AI Cluster Generation defaults
+            'ai_cluster_enabled'      => 0,
+            'ai_cluster_api_key'      => '',
+            'ai_cluster_api_endpoint' => '',
+            'ai_cluster_model'        => '',
+            'ai_cluster_max_urls'     => 200,
         );
 
         $stored = get_option( self::OPTION_KEY, array() );
@@ -89,6 +95,18 @@ class ILC_Settings {
         // Gap Finder settings
         $settings['gap_post_types']   = isset( $data['gap_post_types'] ) ? sanitize_text_field( $data['gap_post_types'] ) : $settings['gap_post_types'];
         $settings['gap_search_title'] = ! empty( $data['gap_search_title'] ) ? 1 : 0;
+
+        // AI Cluster Generation settings
+        $settings['ai_cluster_enabled']      = ! empty( $data['ai_cluster_enabled'] ) ? 1 : 0;
+        $settings['ai_cluster_api_key']      = isset( $data['ai_cluster_api_key'] ) ? sanitize_text_field( $data['ai_cluster_api_key'] ) : $settings['ai_cluster_api_key'];
+        $settings['ai_cluster_api_endpoint'] = isset( $data['ai_cluster_api_endpoint'] ) ? esc_url_raw( $data['ai_cluster_api_endpoint'] ) : $settings['ai_cluster_api_endpoint'];
+        $settings['ai_cluster_model']        = isset( $data['ai_cluster_model'] ) ? sanitize_text_field( $data['ai_cluster_model'] ) : $settings['ai_cluster_model'];
+        $settings['ai_cluster_max_urls']     = isset( $data['ai_cluster_max_urls'] ) ? absint( $data['ai_cluster_max_urls'] ) : $settings['ai_cluster_max_urls'];
+
+        // Ensure max_urls has a sensible default
+        if ( $settings['ai_cluster_max_urls'] < 1 ) {
+            $settings['ai_cluster_max_urls'] = 200;
+        }
 
         update_option( self::OPTION_KEY, $settings );
     }

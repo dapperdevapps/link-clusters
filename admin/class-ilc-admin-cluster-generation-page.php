@@ -1,10 +1,9 @@
 <?php
 /**
- * ILC_Admin_Cluster_Generation_Page - Admin UI for automatic cluster generation.
+ * ILC_Admin_Cluster_Generation_Page - Admin UI for AI-powered cluster generation.
  *
  * Provides a dedicated screen where users can:
- * - Scan site URLs automatically (primary flow)
- * - Paste sitemaps or URL lists (secondary flow)
+ * - Scan site URLs and use AI to suggest clusters (primary flow)
  * - Review suggested clusters and create them
  *
  * @package Internal_Link_Clusters
@@ -27,18 +26,13 @@ class ILC_Admin_Cluster_Generation_Page {
         $step = isset( $_POST['ilc_cluster_gen_step'] ) ? sanitize_text_field( wp_unslash( $_POST['ilc_cluster_gen_step'] ) ) : 'input';
 
         // Handle form submissions
-        if ( $step === 'generate_from_site' ) {
-            self::handle_generate_from_site();
+        if ( $step === 'generate_ai' ) {
+            self::handle_generate_ai();
             return;
         }
 
-        if ( $step === 'generate_from_input' ) {
-            self::handle_generate_from_input();
-            return;
-        }
-
-        if ( $step === 'create' ) {
-            self::handle_create_step();
+        if ( $step === 'create_clusters' ) {
+            self::handle_create_clusters();
             return;
         }
 
@@ -47,14 +41,19 @@ class ILC_Admin_Cluster_Generation_Page {
     }
 
     /**
-     * Render the initial input form with both flows.
+     * Render the initial input form with AI generation option.
      *
      * @param string $error_message Optional error message to display.
-     * @param string $previous_input Optional previous pasted input to preserve.
      */
-    private static function render_input_form( $error_message = '', $previous_input = '' ) {
-        // Get scan summary for display
+    private static function render_input_form( $error_message = '' ) {
+        // Get AI config status
+        $ai_status    = ILC_AI_Cluster_Generator::get_config_status();
         $scan_summary = ILC_URL_Discovery::get_scan_summary();
+        $settings     = ILC_Settings::get_settings();
+        $max_urls     = absint( $settings['ai_cluster_max_urls'] );
+        if ( $max_urls < 1 ) {
+            $max_urls = 200;
+        }
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Cluster Generation', 'internal-link-clusters' ); ?></h1>
@@ -65,287 +64,197 @@ class ILC_Admin_Cluster_Generation_Page {
                 </div>
             <?php endif; ?>
 
-            <!-- Flow A: Scan Site URLs (Primary) -->
+            <!-- AI Cluster Generation Section -->
             <div class="ilc-generation-section" style="background: #fff; border: 1px solid #ccd0d4; border-radius: 4px; padding: 20px; margin-bottom: 20px;">
                 <h2 style="margin-top: 0;">
-                    <span class="dashicons dashicons-search" style="color: #0073aa;"></span>
-                    <?php esc_html_e( 'Generate from Site URLs', 'internal-link-clusters' ); ?>
-                    <span class="ilc-recommended-badge" style="background: #0073aa; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 3px; margin-left: 10px; vertical-align: middle;"><?php esc_html_e( 'Recommended', 'internal-link-clusters' ); ?></span>
+                    <span class="dashicons dashicons-lightbulb" style="color: #0073aa;"></span>
+                    <?php esc_html_e( 'AI Cluster Generation', 'internal-link-clusters' ); ?>
                 </h2>
+
                 <p class="description">
-                    <?php esc_html_e( 'Automatically scan your site\'s published content and generate cluster suggestions based on URL structure.', 'internal-link-clusters' ); ?>
+                    <?php esc_html_e( 'Use AI to automatically analyze your site URLs and suggest meaningful clusters based on content structure and topics.', 'internal-link-clusters' ); ?>
                 </p>
 
-                <!-- Scan Summary -->
-                <div class="ilc-scan-summary" style="background: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px; margin: 15px 0;">
-                    <strong><?php esc_html_e( 'Content to scan:', 'internal-link-clusters' ); ?></strong>
-                    <ul style="margin: 10px 0 0 20px;">
-                        <?php foreach ( $scan_summary['post_types'] as $type => $info ) : ?>
-                            <?php if ( $info['count'] > 0 ) : ?>
-                                <li>
-                                    <strong><?php echo esc_html( $info['label'] ); ?>:</strong>
-                                    <?php
-                                    printf(
-                                        /* translators: %d: number of items */
-                                        esc_html( _n( '%d item', '%d items', $info['count'], 'internal-link-clusters' ) ),
-                                        $info['count']
-                                    );
-                                    ?>
-                                </li>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </ul>
-                    <p style="margin: 10px 0 0; font-weight: 600;">
-                        <?php
-                        printf(
-                            /* translators: %d: total URL count */
-                            esc_html__( 'Total: %d URLs will be analyzed', 'internal-link-clusters' ),
-                            $scan_summary['total_count']
-                        );
-                        ?>
-                    </p>
-                </div>
-
-                <form method="post">
-                    <?php wp_nonce_field( 'ilc_cluster_gen_generate_site' ); ?>
-                    <input type="hidden" name="ilc_cluster_gen_step" value="generate_from_site">
-
-                    <table class="form-table" style="margin-top: 0;">
-                        <tbody>
-                            <tr>
-                                <th scope="row">
-                                    <label for="ilc_site_post_types"><?php esc_html_e( 'Post types to scan', 'internal-link-clusters' ); ?></label>
-                                </th>
-                                <td>
-                                    <fieldset>
+                <?php if ( ! $ai_status['configured'] ) : ?>
+                    <!-- AI Not Configured Warning -->
+                    <div class="notice notice-warning inline" style="margin: 15px 0;">
+                        <p>
+                            <strong><?php esc_html_e( 'AI Not Configured', 'internal-link-clusters' ); ?></strong><br>
+                            <?php echo esc_html( $ai_status['message'] ); ?>
+                        </p>
+                        <p>
+                            <a href="<?php echo esc_url( admin_url( 'admin.php?page=ilc-settings' ) ); ?>" class="button">
+                                <?php esc_html_e( 'Configure AI Settings', 'internal-link-clusters' ); ?>
+                            </a>
+                        </p>
+                    </div>
+                <?php else : ?>
+                    <!-- AI Configured - Show Scan Info -->
+                    <div class="ilc-scan-summary" style="background: #f0f6fc; border: 1px solid #c3c4c7; border-left: 4px solid #0073aa; border-radius: 4px; padding: 15px; margin: 15px 0;">
+                        <strong><?php esc_html_e( 'Content to analyze:', 'internal-link-clusters' ); ?></strong>
+                        <ul style="margin: 10px 0 0 20px;">
+                            <?php foreach ( $scan_summary['post_types'] as $type => $info ) : ?>
+                                <?php if ( $info['count'] > 0 ) : ?>
+                                    <li>
+                                        <strong><?php echo esc_html( $info['label'] ); ?>:</strong>
                                         <?php
-                                        $all_types = ILC_URL_Discovery::get_public_post_types();
-                                        foreach ( $all_types as $type ) :
-                                            $type_obj = get_post_type_object( $type );
-                                            $label = $type_obj ? $type_obj->labels->name : ucfirst( $type );
-                                            $count = isset( $scan_summary['post_types'][ $type ]['count'] ) ? $scan_summary['post_types'][ $type ]['count'] : 0;
+                                        printf(
+                                            /* translators: %d: number of items */
+                                            esc_html( _n( '%d item', '%d items', $info['count'], 'internal-link-clusters' ) ),
+                                            $info['count']
+                                        );
                                         ?>
-                                            <label style="display: inline-block; margin-right: 15px; margin-bottom: 5px;">
-                                                <input type="checkbox" name="ilc_site_post_types[]" value="<?php echo esc_attr( $type ); ?>" <?php checked( in_array( $type, array( 'post', 'page' ), true ) || $count > 0 ); ?>>
-                                                <?php echo esc_html( $label ); ?> (<?php echo esc_html( $count ); ?>)
-                                            </label>
-                                        <?php endforeach; ?>
-                                    </fieldset>
-                                    <p class="description"><?php esc_html_e( 'Select which post types to include in the scan.', 'internal-link-clusters' ); ?></p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">
-                                    <label for="ilc_site_min_urls"><?php esc_html_e( 'Minimum URLs per cluster', 'internal-link-clusters' ); ?></label>
-                                </th>
-                                <td>
-                                    <input type="number" name="ilc_site_min_urls" id="ilc_site_min_urls" value="2" min="1" max="20" class="small-text">
-                                    <p class="description"><?php esc_html_e( 'Clusters with fewer URLs than this will be filtered out.', 'internal-link-clusters' ); ?></p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </li>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </ul>
+                        <p style="margin: 10px 0 0; font-weight: 600;">
+                            <?php
+                            $total = $scan_summary['total_count'];
+                            if ( $total > $max_urls ) {
+                                printf(
+                                    /* translators: %1$d: total URLs, %2$d: max URLs to send */
+                                    esc_html__( 'Total: %1$d URLs (will send first %2$d to AI)', 'internal-link-clusters' ),
+                                    $total,
+                                    $max_urls
+                                );
+                            } else {
+                                printf(
+                                    /* translators: %d: total URL count */
+                                    esc_html__( 'Total: %d URLs will be analyzed', 'internal-link-clusters' ),
+                                    $total
+                                );
+                            }
+                            ?>
+                        </p>
+                    </div>
 
-                    <p class="submit" style="margin-top: 10px;">
-                        <button type="submit" class="button button-primary button-hero">
-                            <span class="dashicons dashicons-admin-site-alt3" style="margin-top: 4px;"></span>
-                            <?php esc_html_e( 'Scan Site & Suggest Clusters', 'internal-link-clusters' ); ?>
-                        </button>
-                    </p>
-                </form>
-            </div>
+                    <form method="post">
+                        <?php wp_nonce_field( 'ilc_cluster_gen_generate_ai' ); ?>
+                        <input type="hidden" name="ilc_cluster_gen_step" value="generate_ai">
 
-            <!-- Flow B: Paste Input (Secondary) -->
-            <div class="ilc-generation-section" style="background: #fff; border: 1px solid #ccd0d4; border-radius: 4px; padding: 20px;">
-                <h2 style="margin-top: 0;">
-                    <span class="dashicons dashicons-clipboard" style="color: #666;"></span>
-                    <?php esc_html_e( 'Generate from Pasted Input', 'internal-link-clusters' ); ?>
-                    <span style="font-size: 12px; color: #666; font-weight: normal; margin-left: 10px;"><?php esc_html_e( '(Alternative method)', 'internal-link-clusters' ); ?></span>
-                </h2>
-                <p class="description">
-                    <?php esc_html_e( 'Paste a sitemap XML, URL list, or JSON data to generate cluster suggestions from external URLs.', 'internal-link-clusters' ); ?>
-                </p>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; color: #0073aa; font-weight: 500;">
-                        <?php esc_html_e( 'Click to expand pasted input form', 'internal-link-clusters' ); ?>
-                    </summary>
-
-                    <form method="post" style="margin-top: 15px;">
-                        <?php wp_nonce_field( 'ilc_cluster_gen_generate_input' ); ?>
-                        <input type="hidden" name="ilc_cluster_gen_step" value="generate_from_input">
-
-                        <table class="form-table" style="margin-top: 0;">
-                            <tbody>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="ilc_cluster_gen_input"><?php esc_html_e( 'URL Input', 'internal-link-clusters' ); ?></label>
-                                    </th>
-                                    <td>
-                                        <textarea
-                                            name="ilc_cluster_gen_input"
-                                            id="ilc_cluster_gen_input"
-                                            rows="12"
-                                            class="large-text code"
-                                            placeholder="<?php esc_attr_e( "Paste your sitemap XML, URL list, or JSON here...\n\nExamples:\n- Sitemap XML with <loc> tags\n- One URL per line\n- JSON array: [\"https://example.com/page1/\", ...]", 'internal-link-clusters' ); ?>"
-                                        ><?php echo esc_textarea( $previous_input ); ?></textarea>
-                                        <p class="description">
-                                            <?php esc_html_e( 'Supported formats: XML Sitemap, URL list (one per line), JSON array.', 'internal-link-clusters' ); ?>
-                                        </p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="ilc_input_min_urls"><?php esc_html_e( 'Minimum URLs per cluster', 'internal-link-clusters' ); ?></label>
-                                    </th>
-                                    <td>
-                                        <input type="number" name="ilc_input_min_urls" id="ilc_input_min_urls" value="2" min="1" max="20" class="small-text">
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <p class="submit" style="margin-top: 10px;">
-                            <button type="submit" class="button button-secondary">
-                                <span class="dashicons dashicons-search" style="margin-top: 4px;"></span>
-                                <?php esc_html_e( 'Generate from Pasted Input', 'internal-link-clusters' ); ?>
+                        <p class="submit" style="margin-top: 15px;">
+                            <button type="submit" class="button button-primary button-hero" <?php echo $scan_summary['total_count'] < 2 ? 'disabled' : ''; ?>>
+                                <span class="dashicons dashicons-admin-site-alt3" style="margin-top: 4px;"></span>
+                                <?php esc_html_e( 'Generate AI Cluster Suggestions', 'internal-link-clusters' ); ?>
                             </button>
                         </p>
+
+                        <?php if ( $scan_summary['total_count'] < 2 ) : ?>
+                            <p class="description" style="color: #d63638;">
+                                <?php esc_html_e( 'You need at least 2 published posts or pages to generate clusters.', 'internal-link-clusters' ); ?>
+                            </p>
+                        <?php endif; ?>
                     </form>
-                </details>
+                <?php endif; ?>
             </div>
+
+            <!-- Configuration Info -->
+            <?php if ( $ai_status['configured'] ) : ?>
+                <div class="ilc-config-info" style="background: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px;">
+                    <p style="margin: 0;">
+                        <span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>
+                        <strong><?php esc_html_e( 'AI Configuration:', 'internal-link-clusters' ); ?></strong>
+                        <?php
+                        printf(
+                            /* translators: %1$s: model name, %2$d: max URLs */
+                            esc_html__( 'Using model "%1$s" with max %2$d URLs per request.', 'internal-link-clusters' ),
+                            esc_html( $settings['ai_cluster_model'] ? $settings['ai_cluster_model'] : 'default' ),
+                            $max_urls
+                        );
+                        ?>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=ilc-settings' ) ); ?>"><?php esc_html_e( 'Change settings', 'internal-link-clusters' ); ?></a>
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
     }
 
     /**
-     * Handle Flow A: Generate clusters from site URLs.
+     * Handle AI generation step.
      */
-    private static function handle_generate_from_site() {
+    private static function handle_generate_ai() {
         // Verify nonce
-        if ( ! check_admin_referer( 'ilc_cluster_gen_generate_site' ) ) {
+        if ( ! check_admin_referer( 'ilc_cluster_gen_generate_ai' ) ) {
             wp_die( esc_html__( 'Security check failed.', 'internal-link-clusters' ) );
         }
 
-        // Get selected post types
-        $post_types = isset( $_POST['ilc_site_post_types'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['ilc_site_post_types'] ) ) : array();
-        $min_urls   = isset( $_POST['ilc_site_min_urls'] ) ? absint( $_POST['ilc_site_min_urls'] ) : 2;
-
-        if ( $min_urls < 1 ) {
-            $min_urls = 2;
-        }
-
-        if ( empty( $post_types ) ) {
-            self::render_input_form( __( 'Please select at least one post type to scan.', 'internal-link-clusters' ) );
+        // Check AI configuration
+        if ( ! ILC_AI_Cluster_Generator::is_enabled() ) {
+            self::render_input_form( __( 'AI cluster generation is not configured. Please configure it in Settings first.', 'internal-link-clusters' ) );
             return;
         }
 
-        // Discover URLs from the site
-        $urls = ILC_URL_Discovery::get_all_site_urls( $post_types );
+        // Get settings for max URLs
+        $settings = ILC_Settings::get_settings();
+        $max_urls = absint( $settings['ai_cluster_max_urls'] );
+        if ( $max_urls < 1 ) {
+            $max_urls = 200;
+        }
 
-        if ( empty( $urls ) ) {
-            self::render_input_form( __( 'No published content found for the selected post types.', 'internal-link-clusters' ) );
+        // Discover URLs with titles
+        $url_items = ILC_URL_Discovery::get_all_site_urls_with_titles( null, array(
+            'limit' => $max_urls,
+        ) );
+
+        if ( empty( $url_items ) ) {
+            self::render_input_form( __( 'No published content found on your site.', 'internal-link-clusters' ) );
             return;
         }
 
-        // Generate cluster suggestions
-        $clusters = ILC_Cluster_Generation::generate_clusters_from_urls( $urls, $min_urls );
+        // Call AI to suggest clusters
+        $clusters = ILC_AI_Cluster_Generator::suggest_clusters_from_urls( $url_items );
+
+        if ( is_wp_error( $clusters ) ) {
+            self::render_input_form( ILC_AI_Cluster_Generator::get_error_message( $clusters ) );
+            return;
+        }
 
         if ( empty( $clusters ) ) {
-            self::render_input_form(
-                sprintf(
-                    /* translators: %1$d: URL count, %2$d: minimum URLs per cluster */
-                    __( 'Found %1$d URLs, but no clusters could be generated with at least %2$d URLs each. Your site may not have enough pages with similar URL structures, or try lowering the minimum.', 'internal-link-clusters' ),
-                    count( $urls ),
-                    $min_urls
-                )
-            );
+            self::render_input_form( __( 'AI did not return any cluster suggestions. Your site may not have enough related content, or try again.', 'internal-link-clusters' ) );
             return;
         }
 
-        // Show the suggestions review form
-        self::render_suggestions_form( $clusters, count( $urls ), 'site' );
+        // Build a URL to title map for display
+        $url_title_map = array();
+        foreach ( $url_items as $item ) {
+            $url_title_map[ $item['url'] ] = $item['title'];
+        }
+
+        // Show the review form
+        self::render_review_form( $clusters, count( $url_items ), $url_title_map );
     }
 
     /**
-     * Handle Flow B: Generate clusters from pasted input.
-     */
-    private static function handle_generate_from_input() {
-        // Verify nonce
-        if ( ! check_admin_referer( 'ilc_cluster_gen_generate_input' ) ) {
-            wp_die( esc_html__( 'Security check failed.', 'internal-link-clusters' ) );
-        }
-
-        $raw_input = isset( $_POST['ilc_cluster_gen_input'] ) ? wp_unslash( $_POST['ilc_cluster_gen_input'] ) : '';
-        $min_urls  = isset( $_POST['ilc_input_min_urls'] ) ? absint( $_POST['ilc_input_min_urls'] ) : 2;
-
-        if ( $min_urls < 1 ) {
-            $min_urls = 2;
-        }
-
-        // Parse input to URLs
-        $urls = ILC_Cluster_Generation::parse_input_to_urls( $raw_input );
-
-        if ( empty( $urls ) ) {
-            self::render_input_form(
-                __( 'No valid URLs found in your input. Please check the format and try again.', 'internal-link-clusters' ),
-                $raw_input
-            );
-            return;
-        }
-
-        // Generate cluster suggestions
-        $clusters = ILC_Cluster_Generation::generate_clusters_from_urls( $urls, $min_urls );
-
-        if ( empty( $clusters ) ) {
-            self::render_input_form(
-                sprintf(
-                    /* translators: %1$d: URL count, %2$d: minimum URLs per cluster */
-                    __( 'Found %1$d URLs, but no clusters could be generated with at least %2$d URLs each. Try lowering the minimum or adding more URLs with similar path structures.', 'internal-link-clusters' ),
-                    count( $urls ),
-                    $min_urls
-                ),
-                $raw_input
-            );
-            return;
-        }
-
-        // Show the suggestions review form
-        self::render_suggestions_form( $clusters, count( $urls ), 'input' );
-    }
-
-    /**
-     * Render the suggestions review form.
+     * Render the cluster review form.
      *
-     * @param array  $clusters   Generated clusters.
-     * @param int    $total_urls Total URLs processed.
-     * @param string $source     Source type ('site' or 'input').
+     * @param array $clusters      AI-suggested clusters.
+     * @param int   $total_urls    Total URLs processed.
+     * @param array $url_title_map Map of URL to title for display.
      */
-    private static function render_suggestions_form( $clusters, $total_urls, $source = 'site' ) {
-        $stats = ILC_Cluster_Generation::get_cluster_stats( $clusters );
+    private static function render_review_form( $clusters, $total_urls, $url_title_map = array() ) {
+        // Calculate stats
+        $total_clusters   = count( $clusters );
+        $total_urls_in    = 0;
+        foreach ( $clusters as $cluster ) {
+            $total_urls_in += count( $cluster['urls'] );
+        }
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e( 'Cluster Generation - Review Suggestions', 'internal-link-clusters' ); ?></h1>
+            <h1><?php esc_html_e( 'Cluster Generation - Review AI Suggestions', 'internal-link-clusters' ); ?></h1>
 
             <div class="notice notice-success">
                 <p>
-                    <strong><?php esc_html_e( 'Analysis complete!', 'internal-link-clusters' ); ?></strong>
+                    <strong><?php esc_html_e( 'AI Analysis Complete!', 'internal-link-clusters' ); ?></strong>
                     <?php
-                    if ( $source === 'site' ) {
-                        printf(
-                            /* translators: %1$d: cluster count, %2$d: URL count */
-                            esc_html__( 'Scanned your site and found %1$d potential clusters from %2$d URLs.', 'internal-link-clusters' ),
-                            $stats['total_clusters'],
-                            $total_urls
-                        );
-                    } else {
-                        printf(
-                            /* translators: %1$d: cluster count, %2$d: URL count */
-                            esc_html__( 'Found %1$d potential clusters from %2$d pasted URLs.', 'internal-link-clusters' ),
-                            $stats['total_clusters'],
-                            $total_urls
-                        );
-                    }
+                    printf(
+                        /* translators: %1$d: cluster count, %2$d: URL count, %3$d: total URLs */
+                        esc_html__( 'The AI suggested %1$d clusters containing %2$d URLs (from %3$d analyzed).', 'internal-link-clusters' ),
+                        $total_clusters,
+                        $total_urls_in,
+                        $total_urls
+                    );
                     ?>
                 </p>
             </div>
@@ -358,35 +267,26 @@ class ILC_Admin_Cluster_Generation_Page {
                     printf(
                         /* translators: %d: cluster count */
                         esc_html__( 'Clusters: %d', 'internal-link-clusters' ),
-                        $stats['total_clusters']
+                        $total_clusters
                     );
                     ?>
                 </span>
                 <span style="margin-left: 15px;">
                     <?php
                     printf(
-                        /* translators: %d: total URLs */
+                        /* translators: %d: URLs in clusters */
                         esc_html__( 'URLs in clusters: %d', 'internal-link-clusters' ),
-                        $stats['total_urls']
+                        $total_urls_in
                     );
                     ?>
                 </span>
-                <span style="margin-left: 15px;">
-                    <?php
-                    printf(
-                        /* translators: %s: average URLs per cluster */
-                        esc_html__( 'Avg per cluster: %s', 'internal-link-clusters' ),
-                        $stats['avg_urls']
-                    );
-                    ?>
-                </span>
-                <?php if ( $stats['total_urls'] < $total_urls ) : ?>
+                <?php if ( $total_urls_in < $total_urls ) : ?>
                     <span style="margin-left: 15px; color: #666;">
                         <?php
                         printf(
                             /* translators: %d: unassigned URL count */
-                            esc_html__( '(%d URLs not assigned to clusters)', 'internal-link-clusters' ),
-                            $total_urls - $stats['total_urls']
+                            esc_html__( '(%d URLs not assigned)', 'internal-link-clusters' ),
+                            $total_urls - $total_urls_in
                         );
                         ?>
                     </span>
@@ -395,15 +295,15 @@ class ILC_Admin_Cluster_Generation_Page {
 
             <form method="post">
                 <?php wp_nonce_field( 'ilc_cluster_gen_create' ); ?>
-                <input type="hidden" name="ilc_cluster_gen_step" value="create">
+                <input type="hidden" name="ilc_cluster_gen_step" value="create_clusters">
 
                 <p class="description" style="margin-bottom: 15px;">
-                    <?php esc_html_e( 'Review the suggested clusters below. You can edit names, slugs, and uncheck URLs you want to exclude. Only checked URLs will be added to each cluster.', 'internal-link-clusters' ); ?>
+                    <?php esc_html_e( 'Review the AI-suggested clusters below. You can edit names, slugs, and uncheck URLs you want to exclude. Only checked URLs will be added to each cluster.', 'internal-link-clusters' ); ?>
                 </p>
 
                 <?php
                 $cluster_index = 0;
-                foreach ( $clusters as $key => $cluster ) :
+                foreach ( $clusters as $cluster ) :
                     $cluster_index++;
                     $url_count = count( $cluster['urls'] );
                 ?>
@@ -416,8 +316,8 @@ class ILC_Admin_Cluster_Generation_Page {
                                 </label>
                                 <input
                                     type="text"
-                                    name="clusters[<?php echo esc_attr( $key ); ?>][name]"
-                                    value="<?php echo esc_attr( $cluster['label'] ); ?>"
+                                    name="clusters[<?php echo esc_attr( $cluster_index ); ?>][name]"
+                                    value="<?php echo esc_attr( $cluster['name'] ); ?>"
                                     class="regular-text"
                                     style="width: 100%;"
                                 >
@@ -428,7 +328,7 @@ class ILC_Admin_Cluster_Generation_Page {
                                 </label>
                                 <input
                                     type="text"
-                                    name="clusters[<?php echo esc_attr( $key ); ?>][slug]"
+                                    name="clusters[<?php echo esc_attr( $cluster_index ); ?>][slug]"
                                     value="<?php echo esc_attr( $cluster['slug'] ); ?>"
                                     class="regular-text"
                                     style="width: 100%;"
@@ -454,35 +354,41 @@ class ILC_Admin_Cluster_Generation_Page {
                         </div>
 
                         <!-- URLs List (collapsed by default) -->
-                        <div id="cluster-urls-<?php echo esc_attr( $cluster_index ); ?>" class="ilc-cluster-urls" style="display: none; padding: 15px; max-height: 300px; overflow-y: auto;">
+                        <div id="cluster-urls-<?php echo esc_attr( $cluster_index ); ?>" class="ilc-cluster-urls" style="display: none; padding: 15px; max-height: 400px; overflow-y: auto;">
                             <table class="widefat" style="border: none;">
                                 <thead>
                                     <tr>
                                         <th style="width: 30px;">
-                                            <input type="checkbox" class="ilc-select-all" data-cluster="<?php echo esc_attr( $key ); ?>" checked>
+                                            <input type="checkbox" class="ilc-select-all" data-cluster="<?php echo esc_attr( $cluster_index ); ?>" checked>
                                         </th>
-                                        <th><?php esc_html_e( 'URL', 'internal-link-clusters' ); ?></th>
+                                        <th><?php esc_html_e( 'Page', 'internal-link-clusters' ); ?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ( $cluster['urls'] as $url_index => $url ) : ?>
+                                        <?php
+                                        $title = isset( $url_title_map[ $url ] ) ? $url_title_map[ $url ] : '';
+                                        ?>
                                         <tr>
                                             <td>
                                                 <input
                                                     type="checkbox"
-                                                    name="clusters[<?php echo esc_attr( $key ); ?>][urls][<?php echo esc_attr( $url_index ); ?>][include]"
+                                                    name="clusters[<?php echo esc_attr( $cluster_index ); ?>][urls][<?php echo esc_attr( $url_index ); ?>][include]"
                                                     value="1"
-                                                    class="ilc-url-checkbox ilc-cluster-<?php echo esc_attr( $key ); ?>"
+                                                    class="ilc-url-checkbox ilc-cluster-<?php echo esc_attr( $cluster_index ); ?>"
                                                     checked
                                                 >
                                                 <input
                                                     type="hidden"
-                                                    name="clusters[<?php echo esc_attr( $key ); ?>][urls][<?php echo esc_attr( $url_index ); ?>][url]"
+                                                    name="clusters[<?php echo esc_attr( $cluster_index ); ?>][urls][<?php echo esc_attr( $url_index ); ?>][url]"
                                                     value="<?php echo esc_url( $url ); ?>"
                                                 >
                                             </td>
                                             <td>
-                                                <code style="font-size: 12px; word-break: break-all;"><?php echo esc_html( $url ); ?></code>
+                                                <?php if ( ! empty( $title ) ) : ?>
+                                                    <strong><?php echo esc_html( $title ); ?></strong><br>
+                                                <?php endif; ?>
+                                                <code style="font-size: 11px; word-break: break-all; color: #666;"><?php echo esc_html( $url ); ?></code>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -498,8 +404,8 @@ class ILC_Admin_Cluster_Generation_Page {
                         <?php esc_html_e( 'Create Clusters & Assign URLs', 'internal-link-clusters' ); ?>
                     </button>
                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=ilc-cluster-generation' ) ); ?>" class="button button-secondary button-hero">
-                        <span class="dashicons dashicons-arrow-left-alt" style="margin-top: 4px;"></span>
-                        <?php esc_html_e( 'Back / Start Over', 'internal-link-clusters' ); ?>
+                        <span class="dashicons dashicons-update" style="margin-top: 4px;"></span>
+                        <?php esc_html_e( 'Start Over / Regenerate', 'internal-link-clusters' ); ?>
                     </a>
                 </p>
             </form>
@@ -566,9 +472,9 @@ class ILC_Admin_Cluster_Generation_Page {
     }
 
     /**
-     * Handle the create step - create clusters and assign URLs.
+     * Handle cluster creation step.
      */
-    private static function handle_create_step() {
+    private static function handle_create_clusters() {
         // Verify nonce
         if ( ! check_admin_referer( 'ilc_cluster_gen_create' ) ) {
             wp_die( esc_html__( 'Security check failed.', 'internal-link-clusters' ) );
@@ -584,7 +490,7 @@ class ILC_Admin_Cluster_Generation_Page {
         $clusters_created = 0;
         $urls_assigned    = 0;
 
-        foreach ( $clusters_data as $key => $cluster_data ) {
+        foreach ( $clusters_data as $cluster_data ) {
             // Validate cluster name
             $name = isset( $cluster_data['name'] ) ? sanitize_text_field( $cluster_data['name'] ) : '';
             if ( empty( $name ) ) {

@@ -192,6 +192,53 @@ class ILC_Admin_Settings_Page {
 
                 <hr />
 
+                <h2><?php esc_html_e( 'AI Cluster Generation', 'internal-link-clusters' ); ?></h2>
+                <p class="description"><?php esc_html_e( 'Configure AI-powered automatic cluster generation. The AI will analyze your site URLs and suggest meaningful clusters.', 'internal-link-clusters' ); ?></p>
+                <table class="form-table">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><?php esc_html_e( 'Enable AI cluster generation', 'internal-link-clusters' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="ai_cluster_enabled" value="1" <?php checked( $settings['ai_cluster_enabled'], 1 ); ?>>
+                                    <?php esc_html_e( 'Enable AI-powered cluster generation from site URLs.', 'internal-link-clusters' ); ?>
+                                </label>
+                                <p class="description"><?php esc_html_e( 'When enabled, you can use AI to automatically suggest clusters based on your site content.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="ai_cluster_api_endpoint"><?php esc_html_e( 'AI API endpoint', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <input type="url" name="ai_cluster_api_endpoint" id="ai_cluster_api_endpoint" class="regular-text" value="<?php echo esc_attr( $settings['ai_cluster_api_endpoint'] ); ?>" placeholder="https://api.openai.com/v1/chat/completions">
+                                <p class="description"><?php esc_html_e( 'The API endpoint for AI requests (e.g., OpenAI, Anthropic, or custom endpoint).', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="ai_cluster_api_key"><?php esc_html_e( 'AI API key', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <input type="password" name="ai_cluster_api_key" id="ai_cluster_api_key" class="regular-text" value="<?php echo esc_attr( $settings['ai_cluster_api_key'] ); ?>" autocomplete="new-password">
+                                <p class="description"><?php esc_html_e( 'Your API key for the AI service. Keep this secret.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="ai_cluster_model"><?php esc_html_e( 'Model name / ID', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <input type="text" name="ai_cluster_model" id="ai_cluster_model" class="regular-text" value="<?php echo esc_attr( $settings['ai_cluster_model'] ); ?>" placeholder="gpt-4o-mini">
+                                <p class="description"><?php esc_html_e( 'The model identifier to use (e.g., gpt-4o-mini, claude-3-haiku, etc.).', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="ai_cluster_max_urls"><?php esc_html_e( 'Max URLs per AI call', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <input type="number" name="ai_cluster_max_urls" id="ai_cluster_max_urls" class="small-text" value="<?php echo esc_attr( $settings['ai_cluster_max_urls'] ); ?>" min="10" max="1000">
+                                <p class="description"><?php esc_html_e( 'Maximum number of URLs to send to the AI in a single request (default: 200). Lower values reduce API costs.', 'internal-link-clusters' ); ?></p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr />
+
                 <h2><?php esc_html_e( 'Styling', 'internal-link-clusters' ); ?></h2>
                 <table class="form-table">
                     <tbody>

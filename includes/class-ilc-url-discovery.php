@@ -247,5 +247,82 @@ class ILC_URL_Discovery {
             'total_count' => array_sum( $counts ),
         );
     }
+
+    /**
+     * Get all public URLs with titles for AI processing.
+     *
+     * Returns an array of items with URL, post_id, and title for each post.
+     * This format is designed for AI cluster generation.
+     *
+     * @param array|null $post_types Specific post types to include, or null for all public.
+     * @param array      $args       Optional arguments for filtering.
+     *                               - 'exclude_types' => array of post types to exclude
+     *                               - 'exclude_patterns' => array of URL substrings to exclude
+     *                               - 'limit' => max number of items to return (0 = no limit)
+     * @return array[] Array of [ 'url' => string, 'post_id' => int, 'title' => string ]
+     */
+    public static function get_all_site_urls_with_titles( $post_types = null, $args = array() ) {
+        $defaults = array(
+            'exclude_types'    => self::$default_excluded_types,
+            'exclude_patterns' => array(),
+            'limit'            => 0,
+        );
+
+        $args = wp_parse_args( $args, $defaults );
+
+        // Determine which post types to query
+        if ( is_null( $post_types ) ) {
+            $post_types = self::get_public_post_types( $args['exclude_types'] );
+        }
+
+        if ( empty( $post_types ) ) {
+            return array();
+        }
+
+        // Query posts
+        $query_args = array(
+            'post_type'      => $post_types,
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'orderby'        => 'ID',
+            'order'          => 'ASC',
+        );
+
+        $post_ids = get_posts( $query_args );
+
+        if ( empty( $post_ids ) ) {
+            return array();
+        }
+
+        // Build URL items with titles
+        $items = array();
+        foreach ( $post_ids as $post_id ) {
+            $url = get_permalink( $post_id );
+
+            if ( empty( $url ) ) {
+                continue;
+            }
+
+            // Apply exclusion patterns
+            if ( ! empty( $args['exclude_patterns'] ) && self::url_matches_patterns( $url, $args['exclude_patterns'] ) ) {
+                continue;
+            }
+
+            $items[] = array(
+                'url'     => $url,
+                'post_id' => $post_id,
+                'title'   => get_the_title( $post_id ),
+            );
+
+            // Check limit
+            if ( $args['limit'] > 0 && count( $items ) >= $args['limit'] ) {
+                break;
+            }
+        }
+
+        return $items;
+    }
 }
 
