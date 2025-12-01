@@ -24,6 +24,7 @@ require_once ILC_PLUGIN_DIR . 'includes/class-ilc-settings.php';
 require_once ILC_PLUGIN_DIR . 'includes/class-ilc-gap-model.php';
 require_once ILC_PLUGIN_DIR . 'includes/class-ilc-gap-finder.php';
 require_once ILC_PLUGIN_DIR . 'includes/class-ilc-cluster-generation.php';
+require_once ILC_PLUGIN_DIR . 'includes/class-ilc-url-discovery.php';
 
 if ( is_admin() ) {
     require_once ILC_PLUGIN_DIR . 'admin/class-ilc-admin-menu.php';
