@@ -23,6 +23,42 @@ class ILC_Admin_Settings_Page {
             <form method="post">
                 <?php wp_nonce_field( 'ilc_save_settings' ); ?>
 
+                <h2><?php esc_html_e( 'Builder / Theme Mode', 'internal-link-clusters' ); ?></h2>
+                <p class="description"><?php esc_html_e( 'Select the theme or page builder you are using. This determines how cluster grids are inserted into your content.', 'internal-link-clusters' ); ?></p>
+                <?php
+                // Check for Elementor mode warning
+                $builder_mode = isset( $settings['builder_mode'] ) ? $settings['builder_mode'] : 'default';
+                if ( $builder_mode === 'elementor' && ! ilc_is_elementor_active() ) :
+                ?>
+                    <div class="notice notice-warning inline" style="margin: 10px 0;">
+                        <p>
+                            <strong><?php esc_html_e( 'Warning:', 'internal-link-clusters' ); ?></strong>
+                            <?php esc_html_e( 'Elementor mode is enabled but Elementor is not active. Please activate Elementor or switch Builder Mode to Default.', 'internal-link-clusters' ); ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+                <table class="form-table">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><label for="builder_mode"><?php esc_html_e( 'Builder Mode', 'internal-link-clusters' ); ?></label></th>
+                            <td>
+                                <select name="builder_mode" id="builder_mode">
+                                    <option value="default" <?php selected( $settings['builder_mode'], 'default' ); ?>><?php esc_html_e( 'Default / Generic', 'internal-link-clusters' ); ?></option>
+                                    <option value="xtra" <?php selected( $settings['builder_mode'], 'xtra' ); ?>><?php esc_html_e( 'XtraTheme (Codevz)', 'internal-link-clusters' ); ?></option>
+                                    <option value="elementor" <?php selected( $settings['builder_mode'], 'elementor' ); ?>><?php esc_html_e( 'Elementor', 'internal-link-clusters' ); ?></option>
+                                </select>
+                                <p class="description">
+                                    <strong><?php esc_html_e( 'Default:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses standard the_content filter. Works with most themes.', 'internal-link-clusters' ); ?><br>
+                                    <strong><?php esc_html_e( 'XtraTheme:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses XtraTheme/Codevz-specific hooks for optimal compatibility.', 'internal-link-clusters' ); ?><br>
+                                    <strong><?php esc_html_e( 'Elementor:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses Elementor-specific hooks and provides an Elementor widget for manual placement.', 'internal-link-clusters' ); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr />
+
                 <h2><?php esc_html_e( 'Auto-insert', 'internal-link-clusters' ); ?></h2>
                 <table class="form-table">
                     <tbody>

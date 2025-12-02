@@ -60,10 +60,187 @@ function ilc_init_plugin() {
         ILC_Admin_Menu::init();
     }
 
-    // Auto-insert logic
-    add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
+    // Auto-insert logic based on builder mode
+    ilc_register_auto_insert_hooks();
+
+    // Elementor integration (load widget when Elementor is active)
+    if ( ilc_is_elementor_active() ) {
+        add_action( 'elementor/widgets/register', 'ilc_register_elementor_widgets' );
+    }
 }
 add_action( 'plugins_loaded', 'ilc_init_plugin' );
+
+/**
+ * Check if Elementor is active.
+ *
+ * @return bool True if Elementor is loaded.
+ */
+function ilc_is_elementor_active() {
+    return did_action( 'elementor/loaded' ) || class_exists( '\Elementor\Plugin' );
+}
+
+/**
+ * Register auto-insert hooks based on builder mode setting.
+ */
+function ilc_register_auto_insert_hooks() {
+    if ( ! class_exists( 'ILC_Settings' ) ) {
+        return;
+    }
+
+    $settings     = ILC_Settings::get_settings();
+    $builder_mode = isset( $settings['builder_mode'] ) ? $settings['builder_mode'] : 'default';
+
+    switch ( $builder_mode ) {
+        case 'xtra':
+            // XtraTheme (Codevz) specific hooks
+            // Only register if the theme is active
+            if ( function_exists( 'codevz_plus' ) || defined( 'JEstarter' ) ) {
+                add_action( 'codevz_after_content', 'ilc_render_auto_clusters_xtra' );
+            } else {
+                // Fallback to the_content if Xtra isn't detected
+                add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
+            }
+            break;
+
+        case 'elementor':
+            // Elementor specific hooks
+            if ( ilc_is_elementor_active() ) {
+                // Hook into Elementor's frontend content filter
+                add_filter( 'elementor/frontend/the_content', 'ilc_append_clusters_elementor', 20 );
+                // Also hook into the_content as fallback for non-Elementor pages
+                add_filter( 'the_content', 'ilc_append_clusters_elementor', 20 );
+            } else {
+                // Fallback to the_content if Elementor isn't active
+                add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
+            }
+            break;
+
+        case 'default':
+        default:
+            // Default/Generic mode - use standard the_content filter
+            add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
+            break;
+    }
+}
+
+/**
+ * Render clusters for XtraTheme mode.
+ * Used with codevz_after_content action.
+ */
+function ilc_render_auto_clusters_xtra() {
+    if ( ! is_singular() ) {
+        return;
+    }
+
+    if ( ! class_exists( 'ILC_Settings' ) ) {
+        return;
+    }
+
+    $settings = ILC_Settings::get_settings();
+
+    if ( empty( $settings['auto_insert_enabled'] ) ) {
+        return;
+    }
+
+    $post_type = get_post_type();
+    $allowed   = ilc_get_allowed_post_types( $settings );
+
+    if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
+        return;
+    }
+
+    $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+
+    if ( $cluster_html ) {
+        echo $cluster_html;
+    }
+}
+
+/**
+ * Append clusters to content for Elementor mode.
+ *
+ * @param string $content The post content.
+ * @return string Modified content with clusters appended.
+ */
+function ilc_append_clusters_elementor( $content ) {
+    // Prevent running in admin or non-singular contexts
+    if ( is_admin() ) {
+        return $content;
+    }
+
+    if ( ! is_singular() ) {
+        return $content;
+    }
+
+    // Prevent double-rendering
+    static $rendered = array();
+    $post_id = get_the_ID();
+    if ( isset( $rendered[ $post_id ] ) ) {
+        return $content;
+    }
+
+    if ( ! class_exists( 'ILC_Settings' ) ) {
+        return $content;
+    }
+
+    $settings = ILC_Settings::get_settings();
+
+    if ( empty( $settings['auto_insert_enabled'] ) ) {
+        return $content;
+    }
+
+    $post_type = get_post_type();
+    $allowed   = ilc_get_allowed_post_types( $settings );
+
+    if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
+        return $content;
+    }
+
+    $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+
+    if ( empty( $cluster_html ) ) {
+        return $content;
+    }
+
+    $rendered[ $post_id ] = true;
+
+    return $content . "\n\n" . $cluster_html;
+}
+
+/**
+ * Get allowed post types from settings.
+ *
+ * @param array $settings Plugin settings.
+ * @return array Array of allowed post type names.
+ */
+function ilc_get_allowed_post_types( $settings ) {
+    $allowed = array();
+
+    if ( ! empty( $settings['auto_insert_post_types'] ) ) {
+        $pieces = explode( ',', $settings['auto_insert_post_types'] );
+        foreach ( $pieces as $p ) {
+            $p = trim( $p );
+            if ( $p !== '' ) {
+                $allowed[] = $p;
+            }
+        }
+    }
+
+    return $allowed;
+}
+
+/**
+ * Register Elementor widgets.
+ *
+ * @param \Elementor\Widgets_Manager $widgets_manager Elementor widgets manager.
+ */
+function ilc_register_elementor_widgets( $widgets_manager ) {
+    // Load the widget class
+    require_once ILC_PLUGIN_DIR . 'includes/elementor/class-ilc-elementor-cluster-widget.php';
+
+    // Register the widget
+    $widgets_manager->register( new \ILC\Elementor\ILC_Elementor_Cluster_Widget() );
+}
 
 /**
  * Enqueue frontend styles + custom styling variables.
@@ -128,11 +305,17 @@ function ilc_enqueue_styles() {
 
 /**
  * Auto-insert [rc_cluster_auto] into content based on settings.
+ * Used for Default builder mode.
  *
- * @param string $content
- * @return string
+ * @param string $content The post content.
+ * @return string Modified content with clusters appended.
  */
 function ilc_maybe_auto_insert_cluster( $content ) {
+    // Prevent running in admin
+    if ( is_admin() ) {
+        return $content;
+    }
+
     if ( ! is_singular() ) {
         return $content;
     }
@@ -148,17 +331,7 @@ function ilc_maybe_auto_insert_cluster( $content ) {
     }
 
     $post_type = get_post_type();
-    $allowed   = array();
-
-    if ( ! empty( $settings['auto_insert_post_types'] ) ) {
-        $pieces = explode( ',', $settings['auto_insert_post_types'] );
-        foreach ( $pieces as $p ) {
-            $p = trim( $p );
-            if ( $p !== '' ) {
-                $allowed[] = $p;
-            }
-        }
-    }
+    $allowed   = ilc_get_allowed_post_types( $settings );
 
     if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
         return $content;
