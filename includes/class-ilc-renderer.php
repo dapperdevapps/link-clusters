@@ -5,6 +5,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ILC_Renderer {
 
+    /**
+     * Render auto clusters for the current post/page.
+     *
+     * Uses ilc_get_current_post_id() for robust post detection across
+     * different builders (Elementor, Bridge/Qode, etc.).
+     *
+     * @return string Rendered cluster HTML, or empty string if no cluster found.
+     */
+    public static function render_auto_clusters_for_current_post() {
+        $current_post_id = function_exists( 'ilc_get_current_post_id' )
+            ? ilc_get_current_post_id()
+            : get_the_ID();
+
+        $current_url = $current_post_id ? get_permalink( $current_post_id ) : '';
+
+        if ( ! $current_post_id && ! $current_url ) {
+            return '';
+        }
+
+        $cluster = ILC_Cluster_Model::get_cluster_for_page( $current_post_id, $current_url );
+
+        if ( ! $cluster ) {
+            return '';
+        }
+
+        return self::render_cluster( $cluster, $current_url, $current_post_id );
+    }
+
     public static function render_cluster( $cluster, $current_url = null, $current_post_id = null ) {
         if ( ! $cluster || empty( $cluster->id ) ) {
             return '';

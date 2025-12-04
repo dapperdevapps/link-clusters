@@ -201,8 +201,12 @@ class ILC_Elementor_Cluster_Widget extends Widget_Base {
 
             echo $this->render_cluster_by_slug( $slug );
         } else {
-            // Auto mode - render cluster for current page
-            echo do_shortcode( '[rc_cluster_auto]' );
+            // Auto mode - use renderer for better context handling in Elementor
+            if ( class_exists( 'ILC_Renderer' ) && method_exists( 'ILC_Renderer', 'render_auto_clusters_for_current_post' ) ) {
+                echo \ILC_Renderer::render_auto_clusters_for_current_post();
+            } else {
+                echo do_shortcode( '[rc_cluster_auto]' );
+            }
         }
     }
 
@@ -246,8 +250,11 @@ class ILC_Elementor_Cluster_Widget extends Widget_Base {
             return '';
         }
 
-        $current_url     = get_permalink();
-        $current_post_id = get_the_ID();
+        // Use the robust helper for post ID detection in Elementor context
+        $current_post_id = function_exists( 'ilc_get_current_post_id' )
+            ? ilc_get_current_post_id()
+            : get_the_ID();
+        $current_url     = $current_post_id ? get_permalink( $current_post_id ) : '';
 
         return \ILC_Renderer::render_cluster( $cluster, $current_url, $current_post_id );
     }

@@ -103,6 +103,53 @@ function ilc_is_bridge_theme_active() {
 }
 
 /**
+ * Get the current post ID reliably across different contexts.
+ *
+ * This helper function tries multiple methods to get the current post ID,
+ * working around issues with Elementor, Bridge/Qode, and other builders
+ * that may not set the global post context correctly.
+ *
+ * @return int The current post ID, or 0 if not found.
+ */
+function ilc_get_current_post_id() {
+    // 1. Try get_the_ID() (works inside the loop)
+    $post_id = get_the_ID();
+    if ( $post_id ) {
+        return $post_id;
+    }
+
+    // 2. Try get_queried_object_id() (works for main query)
+    $post_id = get_queried_object_id();
+    if ( $post_id ) {
+        return $post_id;
+    }
+
+    // 3. Try global $post
+    global $post;
+    if ( isset( $post->ID ) ) {
+        return $post->ID;
+    }
+
+    // 4. Bridge/Qode specific
+    if ( function_exists( 'bridge_qode_get_page_id' ) ) {
+        $post_id = bridge_qode_get_page_id();
+        if ( $post_id ) {
+            return $post_id;
+        }
+    }
+
+    // 5. Elementor specific (document ID)
+    if ( class_exists( '\Elementor\Plugin' ) ) {
+        $document = \Elementor\Plugin::instance()->documents->get_current();
+        if ( $document ) {
+            return $document->get_main_id();
+        }
+    }
+
+    return 0;
+}
+
+/**
  * Register auto-insert hooks based on builder mode setting.
  */
 function ilc_register_auto_insert_hooks() {

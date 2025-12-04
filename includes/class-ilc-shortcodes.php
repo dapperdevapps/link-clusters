@@ -29,15 +29,22 @@ class ILC_Shortcodes {
             return '';
         }
 
-        $current_post_id = get_queried_object_id();
+        // Use the robust helper for post ID detection across different builders
+        $current_post_id = function_exists( 'ilc_get_current_post_id' )
+            ? ilc_get_current_post_id()
+            : get_queried_object_id();
         $current_url     = $current_post_id ? get_permalink( $current_post_id ) : '';
 
         return ILC_Renderer::render_cluster( $cluster, $current_url, $current_post_id );
     }
 
     public static function shortcode_cluster_auto() {
-        $current_post_id = get_queried_object_id();
-        $current_url     = $current_post_id ? get_permalink( $current_post_id ) : self::get_current_url();
+        // Use the robust helper for post ID detection across different builders
+        $current_post_id = function_exists( 'ilc_get_current_post_id' )
+            ? ilc_get_current_post_id()
+            : get_queried_object_id();
+
+        $current_url = $current_post_id ? get_permalink( $current_post_id ) : self::get_current_url();
 
         $cluster = ILC_Cluster_Model::get_cluster_for_page( $current_post_id, $current_url );
 
