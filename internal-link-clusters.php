@@ -179,6 +179,8 @@ function ilc_register_auto_insert_hooks() {
                 add_filter( 'elementor/frontend/the_content', 'ilc_append_clusters_elementor', 20 );
                 // Also hook into the_content as fallback for non-Elementor pages
                 add_filter( 'the_content', 'ilc_append_clusters_elementor', 20 );
+                // Fallback: use wp_footer for Elementor-built pages where the_content doesn't fire
+                add_action( 'wp_footer', 'ilc_render_clusters_in_footer_elementor', 5 );
             } else {
                 // Fallback to the_content if Elementor isn't active
                 add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
@@ -191,8 +193,8 @@ function ilc_register_auto_insert_hooks() {
                 // Primary: append clusters to the_content for Bridge pages
                 // This places clusters at the bottom of the main content inside the container
                 add_filter( 'the_content', 'ilc_append_clusters_to_content_bridge', 20 );
-                // Note: bridge_qode_action_page_after_container is available via
-                // ilc_output_clusters_bridge_after_container() if needed for custom placement
+                // Also hook into Bridge's after-container action for templates that don't use the_content properly
+                add_action( 'bridge_qode_action_page_after_container', 'ilc_output_clusters_bridge_after_container', 20 );
             } else {
                 // Fallback to the_content if Bridge isn't active
                 add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
@@ -241,6 +243,17 @@ function ilc_render_auto_clusters_xtra() {
 }
 
 /**
+ * Track rendered Elementor clusters to prevent duplicate output.
+ * Shared between ilc_append_clusters_elementor() and ilc_render_clusters_in_footer_elementor().
+ *
+ * @return array Reference to the rendered posts array.
+ */
+function &ilc_elementor_rendered_tracker() {
+    static $rendered = array();
+    return $rendered;
+}
+
+/**
  * Append clusters to content for Elementor mode.
  *
  * @param string $content The post content.
@@ -256,9 +269,9 @@ function ilc_append_clusters_elementor( $content ) {
         return $content;
     }
 
-    // Prevent double-rendering
-    static $rendered = array();
-    $post_id = get_the_ID();
+    // Prevent double-rendering (shared with ilc_render_clusters_in_footer_elementor)
+    $rendered = &ilc_elementor_rendered_tracker();
+    $post_id  = function_exists( 'ilc_get_current_post_id' ) ? ilc_get_current_post_id() : get_the_ID();
     if ( isset( $rendered[ $post_id ] ) ) {
         return $content;
     }
@@ -280,7 +293,12 @@ function ilc_append_clusters_elementor( $content ) {
         return $content;
     }
 
-    $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+    // Use renderer method for better context handling
+    if ( class_exists( 'ILC_Renderer' ) && method_exists( 'ILC_Renderer', 'render_auto_clusters_for_current_post' ) ) {
+        $cluster_html = ILC_Renderer::render_auto_clusters_for_current_post();
+    } else {
+        $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+    }
 
     if ( empty( $cluster_html ) ) {
         return $content;
@@ -289,6 +307,58 @@ function ilc_append_clusters_elementor( $content ) {
     $rendered[ $post_id ] = true;
 
     return $content . "\n\n" . $cluster_html;
+}
+
+/**
+ * Render clusters in footer for Elementor mode.
+ * This is a fallback for Elementor-built pages where the_content filter doesn't fire.
+ */
+function ilc_render_clusters_in_footer_elementor() {
+    // Prevent running in admin
+    if ( is_admin() ) {
+        return;
+    }
+
+    if ( ! is_singular() ) {
+        return;
+    }
+
+    // Check if already rendered via the_content filter
+    $rendered = &ilc_elementor_rendered_tracker();
+    $post_id  = function_exists( 'ilc_get_current_post_id' ) ? ilc_get_current_post_id() : get_the_ID();
+    if ( isset( $rendered[ $post_id ] ) ) {
+        return;
+    }
+
+    if ( ! class_exists( 'ILC_Settings' ) ) {
+        return;
+    }
+
+    $settings = ILC_Settings::get_settings();
+
+    if ( empty( $settings['auto_insert_enabled'] ) ) {
+        return;
+    }
+
+    $post_type = get_post_type();
+    $allowed   = ilc_get_allowed_post_types( $settings );
+
+    if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
+        return;
+    }
+
+    // Use renderer method for better context handling
+    if ( class_exists( 'ILC_Renderer' ) && method_exists( 'ILC_Renderer', 'render_auto_clusters_for_current_post' ) ) {
+        $cluster_html = ILC_Renderer::render_auto_clusters_for_current_post();
+    } else {
+        $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+    }
+
+    if ( ! empty( $cluster_html ) ) {
+        $rendered[ $post_id ] = true;
+        // Output with a wrapper for proper placement
+        echo '<div class="ilc-footer-clusters">' . $cluster_html . '</div>';
+    }
 }
 
 /**
@@ -319,7 +389,7 @@ function ilc_append_clusters_to_content_bridge( $content ) {
 
     // Prevent double-rendering (shared with ilc_output_clusters_bridge_after_container)
     $rendered = &ilc_bridge_rendered_tracker();
-    $post_id  = get_the_ID();
+    $post_id  = function_exists( 'ilc_get_current_post_id' ) ? ilc_get_current_post_id() : get_the_ID();
     if ( isset( $rendered[ $post_id ] ) ) {
         return $content;
     }
@@ -359,14 +429,12 @@ function ilc_append_clusters_to_content_bridge( $content ) {
 }
 
 /**
- * Output clusters after Bridge container (optional hook).
+ * Output clusters after Bridge container.
  * Used with bridge_qode_action_page_after_container action.
  *
- * This function is NOT hooked by default because the primary placement
- * is via ilc_append_clusters_to_content_bridge() using the_content filter.
- *
- * To use this instead of or in addition to the_content placement, add:
- * add_action( 'bridge_qode_action_page_after_container', 'ilc_output_clusters_bridge_after_container', 20 );
+ * This function serves as a fallback for Bridge templates that don't
+ * use the_content properly. Duplicate rendering is prevented via
+ * the shared ilc_bridge_rendered_tracker().
  */
 function ilc_output_clusters_bridge_after_container() {
     if ( is_admin() ) {
@@ -379,7 +447,7 @@ function ilc_output_clusters_bridge_after_container() {
 
     // Prevent double-rendering (shared with ilc_append_clusters_to_content_bridge)
     $rendered = &ilc_bridge_rendered_tracker();
-    $post_id  = get_the_ID();
+    $post_id  = function_exists( 'ilc_get_current_post_id' ) ? ilc_get_current_post_id() : get_the_ID();
     if ( isset( $rendered[ $post_id ] ) ) {
         return;
     }
