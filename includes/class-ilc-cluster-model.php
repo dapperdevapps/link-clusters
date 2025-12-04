@@ -196,6 +196,9 @@ class ILC_Cluster_Model {
 
         $urls_table = $wpdb->prefix . 'ilc_cluster_urls';
 
+        // Ensure columns exist (for existing installations)
+        ILC_Installer::maybe_add_columns();
+
         $wpdb->insert(
             $urls_table,
             array(
