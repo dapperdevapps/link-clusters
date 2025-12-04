@@ -61,7 +61,7 @@ class ILC_Settings {
 
         // Builder mode
         $builder_mode = isset( $data['builder_mode'] ) ? sanitize_text_field( $data['builder_mode'] ) : $settings['builder_mode'];
-        if ( ! in_array( $builder_mode, array( 'default', 'xtra', 'elementor' ), true ) ) {
+        if ( ! in_array( $builder_mode, array( 'default', 'xtra', 'elementor', 'bridge' ), true ) ) {
             $builder_mode = 'default';
         }
         $settings['builder_mode'] = $builder_mode;

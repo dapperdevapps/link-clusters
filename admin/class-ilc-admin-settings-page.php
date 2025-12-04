@@ -37,6 +37,17 @@ class ILC_Admin_Settings_Page {
                         </p>
                     </div>
                 <?php endif; ?>
+                <?php
+                // Check for Bridge mode warning
+                if ( $builder_mode === 'bridge' && function_exists( 'ilc_is_bridge_theme_active' ) && ! ilc_is_bridge_theme_active() ) :
+                ?>
+                    <div class="notice notice-warning inline" style="margin: 10px 0;">
+                        <p>
+                            <strong><?php esc_html_e( 'Warning:', 'internal-link-clusters' ); ?></strong>
+                            <?php esc_html_e( 'Bridge / Qode mode is enabled but the Bridge theme is not active. Please activate the Bridge theme or switch Builder Mode to Default.', 'internal-link-clusters' ); ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
                 <table class="form-table">
                     <tbody>
                         <tr>
@@ -46,11 +57,13 @@ class ILC_Admin_Settings_Page {
                                     <option value="default" <?php selected( $settings['builder_mode'], 'default' ); ?>><?php esc_html_e( 'Default / Generic', 'internal-link-clusters' ); ?></option>
                                     <option value="xtra" <?php selected( $settings['builder_mode'], 'xtra' ); ?>><?php esc_html_e( 'XtraTheme (Codevz)', 'internal-link-clusters' ); ?></option>
                                     <option value="elementor" <?php selected( $settings['builder_mode'], 'elementor' ); ?>><?php esc_html_e( 'Elementor', 'internal-link-clusters' ); ?></option>
+                                    <option value="bridge" <?php selected( $settings['builder_mode'], 'bridge' ); ?>><?php esc_html_e( 'Bridge / Qode', 'internal-link-clusters' ); ?></option>
                                 </select>
                                 <p class="description">
                                     <strong><?php esc_html_e( 'Default:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses standard the_content filter. Works with most themes.', 'internal-link-clusters' ); ?><br>
                                     <strong><?php esc_html_e( 'XtraTheme:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses XtraTheme/Codevz-specific hooks for optimal compatibility.', 'internal-link-clusters' ); ?><br>
-                                    <strong><?php esc_html_e( 'Elementor:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses Elementor-specific hooks and provides an Elementor widget for manual placement.', 'internal-link-clusters' ); ?>
+                                    <strong><?php esc_html_e( 'Elementor:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses Elementor-specific hooks and provides an Elementor widget for manual placement.', 'internal-link-clusters' ); ?><br>
+                                    <strong><?php esc_html_e( 'Bridge / Qode:', 'internal-link-clusters' ); ?></strong> <?php esc_html_e( 'Uses Bridge/Qode theme-specific hooks. Appends clusters at the bottom of the main content.', 'internal-link-clusters' ); ?>
                                 </p>
                             </td>
                         </tr>

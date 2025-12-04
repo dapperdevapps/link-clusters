@@ -80,6 +80,29 @@ function ilc_is_elementor_active() {
 }
 
 /**
+ * Check if Bridge / Qode theme is active.
+ *
+ * @return bool True if Bridge theme or Qode framework is detected.
+ */
+function ilc_is_bridge_theme_active() {
+    $theme    = wp_get_theme();
+    $template = $theme->get_template(); // parent template
+    $name     = $theme->get( 'Name' );
+
+    // Check theme name or template for "bridge"
+    if ( stripos( $name, 'bridge' ) !== false || stripos( $template, 'bridge' ) !== false ) {
+        return true;
+    }
+
+    // Check for Qode framework constants
+    if ( defined( 'QODE_ROOT' ) || defined( 'QODE_FRAMEWORK_ROOT' ) ) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Register auto-insert hooks based on builder mode setting.
  */
 function ilc_register_auto_insert_hooks() {
@@ -111,6 +134,20 @@ function ilc_register_auto_insert_hooks() {
                 add_filter( 'the_content', 'ilc_append_clusters_elementor', 20 );
             } else {
                 // Fallback to the_content if Elementor isn't active
+                add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
+            }
+            break;
+
+        case 'bridge':
+            // Bridge / Qode theme specific hooks
+            if ( ilc_is_bridge_theme_active() ) {
+                // Primary: append clusters to the_content for Bridge pages
+                // This places clusters at the bottom of the main content inside the container
+                add_filter( 'the_content', 'ilc_append_clusters_to_content_bridge', 20 );
+                // Note: bridge_qode_action_page_after_container is available via
+                // ilc_output_clusters_bridge_after_container() if needed for custom placement
+            } else {
+                // Fallback to the_content if Bridge isn't active
                 add_filter( 'the_content', 'ilc_maybe_auto_insert_cluster' );
             }
             break;
@@ -205,6 +242,129 @@ function ilc_append_clusters_elementor( $content ) {
     $rendered[ $post_id ] = true;
 
     return $content . "\n\n" . $cluster_html;
+}
+
+/**
+ * Track rendered Bridge clusters to prevent duplicate output.
+ *
+ * @return array Reference to the rendered posts array.
+ */
+function &ilc_bridge_rendered_tracker() {
+    static $rendered = array();
+    return $rendered;
+}
+
+/**
+ * Append clusters to content for Bridge / Qode theme mode.
+ *
+ * @param string $content The post content.
+ * @return string Modified content with clusters appended.
+ */
+function ilc_append_clusters_to_content_bridge( $content ) {
+    // Prevent running in admin
+    if ( is_admin() ) {
+        return $content;
+    }
+
+    if ( ! is_singular() ) {
+        return $content;
+    }
+
+    // Prevent double-rendering (shared with ilc_output_clusters_bridge_after_container)
+    $rendered = &ilc_bridge_rendered_tracker();
+    $post_id  = get_the_ID();
+    if ( isset( $rendered[ $post_id ] ) ) {
+        return $content;
+    }
+
+    if ( ! class_exists( 'ILC_Settings' ) ) {
+        return $content;
+    }
+
+    $settings = ILC_Settings::get_settings();
+
+    if ( empty( $settings['auto_insert_enabled'] ) ) {
+        return $content;
+    }
+
+    $post_type = get_post_type();
+    $allowed   = ilc_get_allowed_post_types( $settings );
+
+    if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
+        return $content;
+    }
+
+    // Use ILC_Renderer if available, otherwise fall back to shortcode
+    if ( class_exists( 'ILC_Renderer' ) && method_exists( 'ILC_Renderer', 'render_auto_clusters_for_current_post' ) ) {
+        $cluster_html = ILC_Renderer::render_auto_clusters_for_current_post();
+    } else {
+        $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+    }
+
+    if ( empty( $cluster_html ) ) {
+        return $content;
+    }
+
+    $rendered[ $post_id ] = true;
+
+    // Append clusters at bottom of main content
+    return $content . "\n\n" . $cluster_html;
+}
+
+/**
+ * Output clusters after Bridge container (optional hook).
+ * Used with bridge_qode_action_page_after_container action.
+ *
+ * This function is NOT hooked by default because the primary placement
+ * is via ilc_append_clusters_to_content_bridge() using the_content filter.
+ *
+ * To use this instead of or in addition to the_content placement, add:
+ * add_action( 'bridge_qode_action_page_after_container', 'ilc_output_clusters_bridge_after_container', 20 );
+ */
+function ilc_output_clusters_bridge_after_container() {
+    if ( is_admin() ) {
+        return;
+    }
+
+    if ( ! is_singular() ) {
+        return;
+    }
+
+    // Prevent double-rendering (shared with ilc_append_clusters_to_content_bridge)
+    $rendered = &ilc_bridge_rendered_tracker();
+    $post_id  = get_the_ID();
+    if ( isset( $rendered[ $post_id ] ) ) {
+        return;
+    }
+
+    if ( ! class_exists( 'ILC_Settings' ) ) {
+        return;
+    }
+
+    $settings = ILC_Settings::get_settings();
+
+    if ( empty( $settings['auto_insert_enabled'] ) ) {
+        return;
+    }
+
+    $post_type = get_post_type();
+    $allowed   = ilc_get_allowed_post_types( $settings );
+
+    if ( ! empty( $allowed ) && ! in_array( $post_type, $allowed, true ) ) {
+        return;
+    }
+
+    // Use ILC_Renderer if available, otherwise fall back to shortcode
+    if ( class_exists( 'ILC_Renderer' ) && method_exists( 'ILC_Renderer', 'render_auto_clusters_for_current_post' ) ) {
+        $cluster_html = ILC_Renderer::render_auto_clusters_for_current_post();
+    } else {
+        $cluster_html = do_shortcode( '[rc_cluster_auto]' );
+    }
+
+    if ( ! empty( $cluster_html ) ) {
+        $rendered[ $post_id ] = true;
+        echo $cluster_html;
+    }
 }
 
 /**
