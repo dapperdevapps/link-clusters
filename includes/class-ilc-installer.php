@@ -44,6 +44,7 @@ class ILC_Installer {
             css_class varchar(255) DEFAULT '' NOT NULL,
             icon_name varchar(100) DEFAULT '' NOT NULL,
             icon_color varchar(7) DEFAULT '' NOT NULL,
+            hide_cluster tinyint(1) DEFAULT 0 NOT NULL,
             PRIMARY KEY  (id),
             KEY cluster_id (cluster_id),
             KEY post_id (post_id)
@@ -112,6 +113,12 @@ class ILC_Installer {
         $column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM $urls_table LIKE %s", 'icon_color' ) );
         if ( empty( $column_exists ) ) {
             $wpdb->query( "ALTER TABLE $urls_table ADD COLUMN icon_color varchar(7) DEFAULT '' NOT NULL AFTER icon_name" );
+        }
+
+        // Check if hide_cluster column exists in urls table
+        $column_exists = $wpdb->get_results( $wpdb->prepare( "SHOW COLUMNS FROM $urls_table LIKE %s", 'hide_cluster' ) );
+        if ( empty( $column_exists ) ) {
+            $wpdb->query( "ALTER TABLE $urls_table ADD COLUMN hide_cluster tinyint(1) DEFAULT 0 NOT NULL AFTER icon_color" );
         }
     }
 }

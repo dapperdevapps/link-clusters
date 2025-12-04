@@ -182,9 +182,10 @@ class ILC_Cluster_Model {
                     'css_class'    => isset( $item['css_class'] ) ? sanitize_html_class( $item['css_class'] ) : '',
                     'icon_name'    => isset( $item['icon_name'] ) ? sanitize_text_field( $item['icon_name'] ) : '',
                     'icon_color'   => isset( $item['icon_color'] ) ? sanitize_hex_color( $item['icon_color'] ) : '',
+                    'hide_cluster' => ! empty( $item['hide_cluster'] ) ? 1 : 0,
                 ),
                 array( 'id' => (int) $item['id'] ),
-                array( '%s', '%s', '%d', '%s', '%s', '%s', '%s' ),
+                array( '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d' ),
                 array( '%d' )
             );
         }
@@ -208,8 +209,9 @@ class ILC_Cluster_Model {
                 'css_class'     => isset( $data['css_class'] ) ? sanitize_html_class( $data['css_class'] ) : '',
                 'icon_name'     => isset( $data['icon_name'] ) ? sanitize_text_field( $data['icon_name'] ) : '',
                 'icon_color'    => isset( $data['icon_color'] ) ? sanitize_hex_color( $data['icon_color'] ) : '',
+                'hide_cluster'  => ! empty( $data['hide_cluster'] ) ? 1 : 0,
             ),
-            array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s' )
+            array( '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d' )
         );
     }
 
@@ -219,5 +221,55 @@ class ILC_Cluster_Model {
         $urls_table = $wpdb->prefix . 'ilc_cluster_urls';
 
         $wpdb->delete( $urls_table, array( 'id' => (int) $url_id ), array( '%d' ) );
+    }
+
+    /**
+     * Check if cluster should be hidden for a specific page.
+     *
+     * @param int         $cluster_id The cluster ID.
+     * @param int|null    $post_id    The post ID to check.
+     * @param string|null $url        The URL to check.
+     * @return bool True if cluster should be hidden on this page.
+     */
+    public static function should_hide_cluster_for_page( $cluster_id, $post_id = null, $url = null ) {
+        global $wpdb;
+
+        $urls_table = $wpdb->prefix . 'ilc_cluster_urls';
+
+        // Check by post_id first
+        if ( $post_id ) {
+            $hide = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT hide_cluster FROM $urls_table
+                     WHERE cluster_id = %d AND post_id = %d
+                     LIMIT 1",
+                    $cluster_id,
+                    $post_id
+                )
+            );
+
+            if ( $hide !== null ) {
+                return (bool) $hide;
+            }
+        }
+
+        // Check by URL
+        if ( $url ) {
+            $hide = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT hide_cluster FROM $urls_table
+                     WHERE cluster_id = %d AND url = %s
+                     LIMIT 1",
+                    $cluster_id,
+                    $url
+                )
+            );
+
+            if ( $hide !== null ) {
+                return (bool) $hide;
+            }
+        }
+
+        return false;
     }
 }

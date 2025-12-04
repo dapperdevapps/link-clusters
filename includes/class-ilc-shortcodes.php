@@ -52,6 +52,11 @@ class ILC_Shortcodes {
             return '';
         }
 
+        // Check if cluster should be hidden on this page
+        if ( ILC_Cluster_Model::should_hide_cluster_for_page( $cluster->id, $current_post_id, $current_url ) ) {
+            return '';
+        }
+
         return ILC_Renderer::render_cluster( $cluster, $current_url, $current_post_id );
     }
 

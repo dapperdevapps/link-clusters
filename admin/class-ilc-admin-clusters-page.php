@@ -71,14 +71,15 @@ class ILC_Admin_Clusters_Page {
     }
 
     protected static function handle_update_urls( $cluster_id ) {
-        $ids          = isset( $_POST['url_id'] ) ? (array) $_POST['url_id'] : array();
-        $urls         = isset( $_POST['url'] ) ? (array) $_POST['url'] : array();
-        $anchor_texts = isset( $_POST['anchor_text'] ) ? (array) $_POST['anchor_text'] : array();
-        $sort_orders  = isset( $_POST['sort_order'] ) ? (array) $_POST['sort_order'] : array();
-        $icon_names   = isset( $_POST['icon_name'] ) ? (array) $_POST['icon_name'] : array();
-        $icon_colors  = isset( $_POST['icon_color'] ) ? (array) $_POST['icon_color'] : array();
-        $rel_attrs    = isset( $_POST['rel_attribute'] ) ? (array) $_POST['rel_attribute'] : array();
-        $css_classes  = isset( $_POST['css_class'] ) ? (array) $_POST['css_class'] : array();
+        $ids           = isset( $_POST['url_id'] ) ? (array) $_POST['url_id'] : array();
+        $urls          = isset( $_POST['url'] ) ? (array) $_POST['url'] : array();
+        $anchor_texts  = isset( $_POST['anchor_text'] ) ? (array) $_POST['anchor_text'] : array();
+        $sort_orders   = isset( $_POST['sort_order'] ) ? (array) $_POST['sort_order'] : array();
+        $icon_names    = isset( $_POST['icon_name'] ) ? (array) $_POST['icon_name'] : array();
+        $icon_colors   = isset( $_POST['icon_color'] ) ? (array) $_POST['icon_color'] : array();
+        $rel_attrs     = isset( $_POST['rel_attribute'] ) ? (array) $_POST['rel_attribute'] : array();
+        $css_classes   = isset( $_POST['css_class'] ) ? (array) $_POST['css_class'] : array();
+        $hide_clusters = isset( $_POST['hide_cluster'] ) ? (array) $_POST['hide_cluster'] : array();
 
         $items = array();
 
@@ -92,6 +93,7 @@ class ILC_Admin_Clusters_Page {
                 'icon_color'   => isset( $icon_colors[ $index ] ) ? sanitize_hex_color( wp_unslash( $icon_colors[ $index ] ) ) : '',
                 'rel_attribute' => isset( $rel_attrs[ $index ] ) ? sanitize_text_field( wp_unslash( $rel_attrs[ $index ] ) ) : '',
                 'css_class'    => isset( $css_classes[ $index ] ) ? sanitize_html_class( wp_unslash( $css_classes[ $index ] ) ) : '',
+                'hide_cluster' => in_array( (string) $id, $hide_clusters, true ) ? 1 : 0,
             );
         }
 
@@ -101,13 +103,14 @@ class ILC_Admin_Clusters_Page {
     }
 
     protected static function handle_add_url( $cluster_id ) {
-        $url          = isset( $_POST['new_url'] ) ? sanitize_text_field( wp_unslash( $_POST['new_url'] ) ) : '';
-        $anchor_text  = isset( $_POST['new_anchor_text'] ) ? sanitize_text_field( wp_unslash( $_POST['new_anchor_text'] ) ) : '';
-        $sort_order   = isset( $_POST['new_sort_order'] ) ? (int) $_POST['new_sort_order'] : 0;
-        $icon_name    = isset( $_POST['new_icon_name'] ) ? sanitize_text_field( wp_unslash( $_POST['new_icon_name'] ) ) : '';
-        $icon_color   = isset( $_POST['new_icon_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['new_icon_color'] ) ) : '';
+        $url           = isset( $_POST['new_url'] ) ? sanitize_text_field( wp_unslash( $_POST['new_url'] ) ) : '';
+        $anchor_text   = isset( $_POST['new_anchor_text'] ) ? sanitize_text_field( wp_unslash( $_POST['new_anchor_text'] ) ) : '';
+        $sort_order    = isset( $_POST['new_sort_order'] ) ? (int) $_POST['new_sort_order'] : 0;
+        $icon_name     = isset( $_POST['new_icon_name'] ) ? sanitize_text_field( wp_unslash( $_POST['new_icon_name'] ) ) : '';
+        $icon_color    = isset( $_POST['new_icon_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['new_icon_color'] ) ) : '';
         $rel_attribute = isset( $_POST['new_rel_attribute'] ) ? sanitize_text_field( wp_unslash( $_POST['new_rel_attribute'] ) ) : '';
-        $css_class    = isset( $_POST['new_css_class'] ) ? sanitize_html_class( wp_unslash( $_POST['new_css_class'] ) ) : '';
+        $css_class     = isset( $_POST['new_css_class'] ) ? sanitize_html_class( wp_unslash( $_POST['new_css_class'] ) ) : '';
+        $hide_cluster  = ! empty( $_POST['new_hide_cluster'] ) ? 1 : 0;
 
         if ( $url ) {
             ILC_Cluster_Model::add_cluster_url(
@@ -120,6 +123,7 @@ class ILC_Admin_Clusters_Page {
                     'icon_color'   => $icon_color,
                     'rel_attribute' => $rel_attribute,
                     'css_class'    => $css_class,
+                    'hide_cluster' => $hide_cluster,
                 )
             );
             echo '<div class="notice notice-success"><p>URL added.</p></div>';
@@ -252,15 +256,17 @@ class ILC_Admin_Clusters_Page {
                                     <th><?php esc_html_e( 'Rel Attribute', 'internal-link-clusters' ); ?></th>
                                     <th><?php esc_html_e( 'CSS Class', 'internal-link-clusters' ); ?></th>
                                     <th><?php esc_html_e( 'Sort Order', 'internal-link-clusters' ); ?></th>
+                                    <th><?php esc_html_e( 'Hide Cluster', 'internal-link-clusters' ); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ( $urls as $row ) : ?>
                                     <?php
-                                    $icon_name  = isset( $row->icon_name ) ? $row->icon_name : '';
-                                    $icon_color = isset( $row->icon_color ) ? $row->icon_color : '';
-                                    $rel_attr   = isset( $row->rel_attribute ) ? $row->rel_attribute : '';
-                                    $css_class  = isset( $row->css_class ) ? $row->css_class : '';
+                                    $icon_name    = isset( $row->icon_name ) ? $row->icon_name : '';
+                                    $icon_color   = isset( $row->icon_color ) ? $row->icon_color : '';
+                                    $rel_attr     = isset( $row->rel_attribute ) ? $row->rel_attribute : '';
+                                    $css_class    = isset( $row->css_class ) ? $row->css_class : '';
+                                    $hide_cluster = isset( $row->hide_cluster ) ? (int) $row->hide_cluster : 0;
                                     ?>
                                     <tr>
                                         <td>
@@ -293,6 +299,12 @@ class ILC_Admin_Clusters_Page {
                                         </td>
                                         <td style="width:120px;">
                                             <input type="number" name="sort_order[]" value="<?php echo (int) $row->sort_order; ?>" class="small-text">
+                                        </td>
+                                        <td style="text-align:center;">
+                                            <label>
+                                                <input type="checkbox" name="hide_cluster[]" value="<?php echo (int) $row->id; ?>" <?php checked( $hide_cluster, 1 ); ?>>
+                                            </label>
+                                            <p class="description" style="font-size:10px; margin:2px 0 0;"><?php esc_html_e( 'Hide on this page', 'internal-link-clusters' ); ?></p>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -349,6 +361,16 @@ class ILC_Admin_Clusters_Page {
                             <tr>
                                 <th scope="row"><label for="ilc-new-css-class"><?php esc_html_e( 'CSS Class', 'internal-link-clusters' ); ?></label></th>
                                 <td><input name="new_css_class" type="text" id="ilc-new-css-class" class="regular-text" placeholder="custom-class"></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Hide Cluster', 'internal-link-clusters' ); ?></th>
+                                <td>
+                                    <label>
+                                        <input name="new_hide_cluster" type="checkbox" value="1">
+                                        <?php esc_html_e( 'Hide cluster grid on this page', 'internal-link-clusters' ); ?>
+                                    </label>
+                                    <p class="description"><?php esc_html_e( 'When checked, the cluster grid will not auto-display on this page, but the page will still be part of the cluster.', 'internal-link-clusters' ); ?></p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
