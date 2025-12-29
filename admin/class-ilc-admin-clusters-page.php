@@ -30,6 +30,11 @@ class ILC_Admin_Clusters_Page {
             self::handle_add_url( $id );
         }
 
+        if ( isset( $_GET['delete_url'] ) && $id && check_admin_referer( 'ilc_delete_url_' . (int) $_GET['delete_url'] ) ) {
+            ILC_Cluster_Model::delete_cluster_url( (int) $_GET['delete_url'] );
+            echo '<div class="notice notice-success"><p>URL removed from cluster.</p></div>';
+        }
+
         if ( $action === 'edit' ) {
             self::render_edit_screen( $id );
         } elseif ( $action === 'add' ) {
@@ -257,6 +262,7 @@ class ILC_Admin_Clusters_Page {
                                     <th><?php esc_html_e( 'CSS Class', 'internal-link-clusters' ); ?></th>
                                     <th><?php esc_html_e( 'Sort Order', 'internal-link-clusters' ); ?></th>
                                     <th><?php esc_html_e( 'Hide Cluster', 'internal-link-clusters' ); ?></th>
+                                    <th><?php esc_html_e( 'Actions', 'internal-link-clusters' ); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -305,6 +311,19 @@ class ILC_Admin_Clusters_Page {
                                                 <input type="checkbox" name="hide_cluster[]" value="<?php echo (int) $row->id; ?>" <?php checked( $hide_cluster, 1 ); ?>>
                                             </label>
                                             <p class="description" style="font-size:10px; margin:2px 0 0;"><?php esc_html_e( 'Hide on this page', 'internal-link-clusters' ); ?></p>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            $delete_url = wp_nonce_url(
+                                                admin_url( 'admin.php?page=ilc-clusters&action=edit&id=' . (int) $id . '&delete_url=' . (int) $row->id ),
+                                                'ilc_delete_url_' . (int) $row->id
+                                            );
+                                            ?>
+                                            <a href="<?php echo esc_url( $delete_url ); ?>" 
+                                               onclick="return confirm('<?php esc_attr_e( 'Remove this URL from the cluster?', 'internal-link-clusters' ); ?>');"
+                                               class="submitdelete">
+                                                <?php esc_html_e( 'Remove', 'internal-link-clusters' ); ?>
+                                            </a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
