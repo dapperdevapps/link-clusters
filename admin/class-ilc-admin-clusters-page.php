@@ -198,7 +198,21 @@ class ILC_Admin_Clusters_Page {
         if ( $result ) {
             echo '<div class="notice notice-success"><p>Display page added. The cluster will now show on this page.</p></div>';
         } else {
-            echo '<div class="notice notice-error"><p>Failed to add display page.</p></div>';
+            // #region agent log
+            global $wpdb;
+            $table = $wpdb->prefix . 'ilc_cluster_display_pages';
+            $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
+            $debug_info = sprintf(
+                'DEBUG: cluster_id=%s, post_id=%s, url=%s, table=%s, table_exists=%s, last_error=%s',
+                $cluster_id,
+                var_export($post_id, true),
+                var_export($url, true),
+                $table,
+                $table_exists ? 'YES' : 'NO',
+                $wpdb->last_error
+            );
+            echo '<div class="notice notice-error"><p>Failed to add display page.</p><pre style="background:#f5f5f5;padding:10px;margin-top:10px;overflow:auto;">' . esc_html($debug_info) . '</pre></div>';
+            // #endregion
         }
     }
 
