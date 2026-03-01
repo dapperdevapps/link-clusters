@@ -349,17 +349,14 @@ class ILC_Cluster_Model {
 
         // #region agent log
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
-        $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H1','location'=>'class-ilc-cluster-model.php:add_display_page','message'=>'Table check','data'=>array('table'=>$table,'table_exists'=>$table_exists),'timestamp'=>round(microtime(true)*1000));
-        file_put_contents(dirname(__DIR__) . '/debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        // Ensure table exists (handles upgrades from older versions)
+        if ( ! $table_exists ) {
+            ILC_Installer::install();
+        }
         // #endregion
 
         $post_id = ! empty( $data['post_id'] ) ? (int) $data['post_id'] : null;
         $url     = isset( $data['url'] ) ? sanitize_text_field( $data['url'] ) : '';
-
-        // #region agent log
-        $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H3','location'=>'class-ilc-cluster-model.php:add_display_page','message'=>'Parsed data','data'=>array('cluster_id'=>$cluster_id,'post_id'=>$post_id,'url'=>$url,'validation_would_fail'=>(!$post_id && empty($url))),'timestamp'=>round(microtime(true)*1000));
-        file_put_contents(dirname(__DIR__) . '/debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
-        // #endregion
 
         if ( ! $post_id && empty( $url ) ) {
             return false;
@@ -374,11 +371,6 @@ class ILC_Cluster_Model {
             ),
             array( '%d', '%d', '%s' )
         );
-
-        // #region agent log
-        $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H2','location'=>'class-ilc-cluster-model.php:add_display_page','message'=>'After insert','data'=>array('inserted'=>$inserted,'insert_id'=>$wpdb->insert_id,'last_error'=>$wpdb->last_error),'timestamp'=>round(microtime(true)*1000));
-        file_put_contents(dirname(__DIR__) . '/debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
-        // #endregion
 
         return $inserted ? (int) $wpdb->insert_id : false;
     }
