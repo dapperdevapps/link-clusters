@@ -347,13 +347,11 @@ class ILC_Cluster_Model {
 
         $table = $wpdb->prefix . 'ilc_cluster_display_pages';
 
-        // #region agent log
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") === $table;
         // Ensure table exists (handles upgrades from older versions)
+        $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$table'" ) === $table;
         if ( ! $table_exists ) {
             ILC_Installer::install();
         }
-        // #endregion
 
         $post_id = ! empty( $data['post_id'] ) ? (int) $data['post_id'] : null;
         $url     = isset( $data['url'] ) ? sanitize_text_field( $data['url'] ) : '';
