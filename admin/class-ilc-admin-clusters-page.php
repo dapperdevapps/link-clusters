@@ -145,45 +145,86 @@ class ILC_Admin_Clusters_Page {
     }
 
     protected static function handle_add_display_page( $cluster_id ) {
-        $input = isset( $_POST['display_page_input'] ) ? sanitize_text_field( wp_unslash( $_POST['display_page_input'] ) ) : '';
+        $input = isset( $_POST['display_page_input'] ) ? sanitize_textarea_field( wp_unslash( $_POST['display_page_input'] ) ) : '';
 
         if ( empty( $input ) ) {
-            echo '<div class="notice notice-error"><p>Please enter a URL or Page ID.</p></div>';
+            echo '<div class="notice notice-error"><p>Please enter at least one URL or Page ID.</p></div>';
             return;
         }
 
-        $post_id = null;
-        $url     = '';
+        // Split by newlines and commas, trim whitespace, filter empty entries
+        $entries = preg_split( '/[\n,]+/', $input );
+        $entries = array_filter( array_map( 'trim', $entries ) );
 
-        // Check if input is numeric (Page ID)
-        if ( is_numeric( $input ) ) {
-            $post_id = (int) $input;
-            $post    = get_post( $post_id );
-            if ( ! $post ) {
-                echo '<div class="notice notice-error"><p>Post ID not found.</p></div>';
-                return;
+        if ( empty( $entries ) ) {
+            echo '<div class="notice notice-error"><p>Please enter at least one URL or Page ID.</p></div>';
+            return;
+        }
+
+        $success_count = 0;
+        $failed_entries = array();
+
+        foreach ( $entries as $entry ) {
+            $post_id = null;
+            $url     = '';
+
+            // Check if entry is numeric (Page ID)
+            if ( is_numeric( $entry ) ) {
+                $post_id = (int) $entry;
+                $post    = get_post( $post_id );
+                if ( ! $post ) {
+                    $failed_entries[] = $entry . ' (Post ID not found)';
+                    continue;
+                }
+            } else {
+                // It's a URL - try to find the post ID
+                $url = $entry;
+                $post_id_from_url = url_to_postid( $url );
+                if ( $post_id_from_url ) {
+                    $post_id = $post_id_from_url;
+                }
             }
-        } else {
-            // It's a URL - try to find the post ID
-            $url = $input;
-            $post_id_from_url = url_to_postid( $url );
-            if ( $post_id_from_url ) {
-                $post_id = $post_id_from_url;
+
+            $result = ILC_Cluster_Model::add_display_page(
+                $cluster_id,
+                array(
+                    'post_id' => $post_id,
+                    'url'     => $url,
+                )
+            );
+
+            if ( $result ) {
+                $success_count++;
+            } else {
+                $failed_entries[] = $entry . ' (Failed to add)';
             }
         }
 
-        $result = ILC_Cluster_Model::add_display_page(
-            $cluster_id,
-            array(
-                'post_id' => $post_id,
-                'url'     => $url,
-            )
-        );
+        // Display results
+        if ( $success_count > 0 ) {
+            $message = sprintf(
+                _n(
+                    'Added %d display page.',
+                    'Added %d display pages.',
+                    $success_count,
+                    'internal-link-clusters'
+                ),
+                $success_count
+            );
+            echo '<div class="notice notice-success"><p>' . esc_html( $message ) . '</p></div>';
+        }
 
-        if ( $result ) {
-            echo '<div class="notice notice-success"><p>Display page added. The cluster will now show on this page.</p></div>';
-        } else {
-            echo '<div class="notice notice-error"><p>Failed to add display page.</p></div>';
+        if ( ! empty( $failed_entries ) ) {
+            $failed_message = sprintf(
+                _n(
+                    '%d entry failed:',
+                    '%d entries failed:',
+                    count( $failed_entries ),
+                    'internal-link-clusters'
+                ),
+                count( $failed_entries )
+            );
+            echo '<div class="notice notice-warning"><p>' . esc_html( $failed_message ) . ' ' . esc_html( implode( ', ', $failed_entries ) ) . '</p></div>';
         }
     }
 
@@ -514,16 +555,16 @@ class ILC_Admin_Clusters_Page {
                     <table class="form-table">
                         <tbody>
                             <tr>
-                                <th scope="row"><label for="ilc-display-page-input"><?php esc_html_e( 'Page URL or ID', 'internal-link-clusters' ); ?></label></th>
+                                <th scope="row"><label for="ilc-display-page-input"><?php esc_html_e( 'Page URLs or IDs', 'internal-link-clusters' ); ?></label></th>
                                 <td>
-                                    <input name="display_page_input" type="text" id="ilc-display-page-input" class="regular-text" placeholder="<?php esc_attr_e( '/example-page/ or 123', 'internal-link-clusters' ); ?>">
-                                    <p class="description"><?php esc_html_e( 'Enter a URL (e.g., /my-page/) or a WordPress Post/Page ID. The cluster will display on this page but the page will NOT appear as a link in the cluster.', 'internal-link-clusters' ); ?></p>
+                                    <textarea name="display_page_input" id="ilc-display-page-input" class="large-text" rows="4" placeholder="<?php esc_attr_e( "/page-one/\n/page-two/\n123, 456", 'internal-link-clusters' ); ?>"></textarea>
+                                    <p class="description"><?php esc_html_e( 'Enter URLs or Post IDs, one per line or comma-separated. The cluster will display on these pages but they will NOT appear as links in the cluster.', 'internal-link-clusters' ); ?></p>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                     <p class="submit">
-                        <button type="submit" name="ilc_add_display_page" class="button button-secondary"><?php esc_html_e( 'Add Display Page', 'internal-link-clusters' ); ?></button>
+                        <button type="submit" name="ilc_add_display_page" class="button button-secondary"><?php esc_html_e( 'Add Display Pages', 'internal-link-clusters' ); ?></button>
                     </p>
                 </form>
             <?php endif; ?>
