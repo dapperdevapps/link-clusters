@@ -149,7 +149,7 @@ class ILC_Admin_Clusters_Page {
 
         // #region agent log
         $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H4','location'=>'class-ilc-admin-clusters-page.php:handle_add_display_page','message'=>'Entry params','data'=>array('cluster_id'=>$cluster_id,'input'=>$input),'timestamp'=>round(microtime(true)*1000));
-        file_put_contents(ABSPATH . '../debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        file_put_contents(dirname(__DIR__) . '/debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
         // #endregion
 
         if ( empty( $input ) ) {
@@ -179,7 +179,7 @@ class ILC_Admin_Clusters_Page {
 
         // #region agent log
         $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H3','location'=>'class-ilc-admin-clusters-page.php:handle_add_display_page','message'=>'Before model call','data'=>array('post_id'=>$post_id,'url'=>$url,'is_numeric'=>is_numeric($input)),'timestamp'=>round(microtime(true)*1000));
-        file_put_contents(ABSPATH . '../debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        file_put_contents(dirname(__DIR__) . '/debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
         // #endregion
 
         $result = ILC_Cluster_Model::add_display_page(
@@ -192,7 +192,7 @@ class ILC_Admin_Clusters_Page {
 
         // #region agent log
         $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H3','location'=>'class-ilc-admin-clusters-page.php:handle_add_display_page','message'=>'After model call','data'=>array('result'=>$result),'timestamp'=>round(microtime(true)*1000));
-        file_put_contents(ABSPATH . '../debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        file_put_contents(dirname(__DIR__) . '/debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
         // #endregion
 
         if ( $result ) {
