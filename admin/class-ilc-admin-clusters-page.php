@@ -147,6 +147,11 @@ class ILC_Admin_Clusters_Page {
     protected static function handle_add_display_page( $cluster_id ) {
         $input = isset( $_POST['display_page_input'] ) ? sanitize_text_field( wp_unslash( $_POST['display_page_input'] ) ) : '';
 
+        // #region agent log
+        $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H4','location'=>'class-ilc-admin-clusters-page.php:handle_add_display_page','message'=>'Entry params','data'=>array('cluster_id'=>$cluster_id,'input'=>$input),'timestamp'=>round(microtime(true)*1000));
+        file_put_contents(ABSPATH . '../debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        // #endregion
+
         if ( empty( $input ) ) {
             echo '<div class="notice notice-error"><p>Please enter a URL or Page ID.</p></div>';
             return;
@@ -172,6 +177,11 @@ class ILC_Admin_Clusters_Page {
             }
         }
 
+        // #region agent log
+        $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H3','location'=>'class-ilc-admin-clusters-page.php:handle_add_display_page','message'=>'Before model call','data'=>array('post_id'=>$post_id,'url'=>$url,'is_numeric'=>is_numeric($input)),'timestamp'=>round(microtime(true)*1000));
+        file_put_contents(ABSPATH . '../debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        // #endregion
+
         $result = ILC_Cluster_Model::add_display_page(
             $cluster_id,
             array(
@@ -179,6 +189,11 @@ class ILC_Admin_Clusters_Page {
                 'url'     => $url,
             )
         );
+
+        // #region agent log
+        $log_data = array('sessionId'=>'5092ba','runId'=>'run1','hypothesisId'=>'H3','location'=>'class-ilc-admin-clusters-page.php:handle_add_display_page','message'=>'After model call','data'=>array('result'=>$result),'timestamp'=>round(microtime(true)*1000));
+        file_put_contents(ABSPATH . '../debug-5092ba.log', json_encode($log_data) . "\n", FILE_APPEND);
+        // #endregion
 
         if ( $result ) {
             echo '<div class="notice notice-success"><p>Display page added. The cluster will now show on this page.</p></div>';
