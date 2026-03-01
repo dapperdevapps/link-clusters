@@ -13,9 +13,10 @@ class ILC_Installer {
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $clusters_table    = $wpdb->prefix . 'ilc_clusters';
-        $urls_table        = $wpdb->prefix . 'ilc_cluster_urls';
-        $suggestions_table = $wpdb->prefix . 'ilc_link_suggestions';
+        $clusters_table      = $wpdb->prefix . 'ilc_clusters';
+        $urls_table          = $wpdb->prefix . 'ilc_cluster_urls';
+        $display_pages_table = $wpdb->prefix . 'ilc_cluster_display_pages';
+        $suggestions_table   = $wpdb->prefix . 'ilc_link_suggestions';
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -50,6 +51,18 @@ class ILC_Installer {
             KEY post_id (post_id)
         ) $charset_collate;";
 
+        // Display pages table - pages where cluster displays but page is not part of cluster
+        $sql_display_pages = "CREATE TABLE $display_pages_table (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            cluster_id bigint(20) unsigned NOT NULL,
+            post_id bigint(20) unsigned NULL,
+            url text NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id),
+            KEY cluster_id (cluster_id),
+            KEY post_id (post_id)
+        ) $charset_collate;";
+
         // Link suggestions table for Internal Link Gap Finder
         $sql_suggestions = "CREATE TABLE $suggestions_table (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -69,6 +82,7 @@ class ILC_Installer {
 
         dbDelta( $sql_clusters );
         dbDelta( $sql_urls );
+        dbDelta( $sql_display_pages );
         dbDelta( $sql_suggestions );
 
         // Add new columns to existing installations

@@ -44,9 +44,11 @@ class ILC_Cluster_Model {
     public static function get_cluster_for_page( $post_id = null, $url = null ) {
         global $wpdb;
 
-        $clusters_table = $wpdb->prefix . 'ilc_clusters';
-        $urls_table     = $wpdb->prefix . 'ilc_cluster_urls';
+        $clusters_table      = $wpdb->prefix . 'ilc_clusters';
+        $urls_table          = $wpdb->prefix . 'ilc_cluster_urls';
+        $display_pages_table = $wpdb->prefix . 'ilc_cluster_display_pages';
 
+        // First, check if the page is part of a cluster (in cluster URLs)
         if ( $post_id ) {
             $cluster = $wpdb->get_row(
                 $wpdb->prepare(
@@ -69,6 +71,39 @@ class ILC_Cluster_Model {
                     "SELECT c.* FROM $clusters_table c
                      INNER JOIN $urls_table u ON c.id = u.cluster_id
                      WHERE u.url = %s
+                     LIMIT 1",
+                    $url
+                )
+            );
+
+            if ( $cluster ) {
+                return $cluster;
+            }
+        }
+
+        // Second, check additional display pages (pages where cluster shows but aren't part of it)
+        if ( $post_id ) {
+            $cluster = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT c.* FROM $clusters_table c
+                     INNER JOIN $display_pages_table d ON c.id = d.cluster_id
+                     WHERE d.post_id = %d
+                     LIMIT 1",
+                    $post_id
+                )
+            );
+
+            if ( $cluster ) {
+                return $cluster;
+            }
+        }
+
+        if ( $url ) {
+            $cluster = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT c.* FROM $clusters_table c
+                     INNER JOIN $display_pages_table d ON c.id = d.cluster_id
+                     WHERE d.url = %s
                      LIMIT 1",
                     $url
                 )
@@ -152,11 +187,13 @@ class ILC_Cluster_Model {
     public static function delete_cluster( $id ) {
         global $wpdb;
 
-        $clusters_table = $wpdb->prefix . 'ilc_clusters';
-        $urls_table     = $wpdb->prefix . 'ilc_cluster_urls';
+        $clusters_table      = $wpdb->prefix . 'ilc_clusters';
+        $urls_table          = $wpdb->prefix . 'ilc_cluster_urls';
+        $display_pages_table = $wpdb->prefix . 'ilc_cluster_display_pages';
 
         $wpdb->delete( $clusters_table, array( 'id' => (int) $id ), array( '%d' ) );
         $wpdb->delete( $urls_table, array( 'cluster_id' => (int) $id ), array( '%d' ) );
+        $wpdb->delete( $display_pages_table, array( 'cluster_id' => (int) $id ), array( '%d' ) );
     }
 
     public static function update_cluster_urls( $cluster_id, $items ) {
@@ -274,5 +311,85 @@ class ILC_Cluster_Model {
         }
 
         return false;
+    }
+
+    /**
+     * Get additional display pages for a cluster.
+     * These are pages where the cluster should be shown but are NOT part of the cluster.
+     *
+     * @param int $cluster_id The cluster ID.
+     * @return array Array of display page rows.
+     */
+    public static function get_display_pages( $cluster_id ) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'ilc_cluster_display_pages';
+
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM $table WHERE cluster_id = %d ORDER BY id ASC",
+                $cluster_id
+            )
+        );
+
+        return $results ? $results : array();
+    }
+
+    /**
+     * Add an additional display page for a cluster.
+     *
+     * @param int   $cluster_id The cluster ID.
+     * @param array $data       Data array with 'post_id' and/or 'url'.
+     * @return int|false Insert ID on success, false on failure.
+     */
+    public static function add_display_page( $cluster_id, $data ) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'ilc_cluster_display_pages';
+
+        $post_id = ! empty( $data['post_id'] ) ? (int) $data['post_id'] : null;
+        $url     = isset( $data['url'] ) ? sanitize_text_field( $data['url'] ) : '';
+
+        if ( ! $post_id && empty( $url ) ) {
+            return false;
+        }
+
+        $inserted = $wpdb->insert(
+            $table,
+            array(
+                'cluster_id' => (int) $cluster_id,
+                'post_id'    => $post_id,
+                'url'        => $url,
+            ),
+            array( '%d', '%d', '%s' )
+        );
+
+        return $inserted ? (int) $wpdb->insert_id : false;
+    }
+
+    /**
+     * Delete an additional display page.
+     *
+     * @param int $id The display page row ID.
+     */
+    public static function delete_display_page( $id ) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'ilc_cluster_display_pages';
+
+        $wpdb->delete( $table, array( 'id' => (int) $id ), array( '%d' ) );
+    }
+
+    /**
+     * Delete all display pages for a cluster.
+     *
+     * @param int $cluster_id The cluster ID.
+     */
+    public static function delete_display_pages_for_cluster( $cluster_id ) {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'ilc_cluster_display_pages';
+
+        $wpdb->delete( $table, array( 'cluster_id' => (int) $cluster_id ), array( '%d' ) );
     }
 }

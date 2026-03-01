@@ -35,6 +35,15 @@ class ILC_Admin_Clusters_Page {
             echo '<div class="notice notice-success"><p>URL removed from cluster.</p></div>';
         }
 
+        if ( isset( $_POST['ilc_add_display_page'] ) && $id && check_admin_referer( 'ilc_add_display_page_' . $id ) ) {
+            self::handle_add_display_page( $id );
+        }
+
+        if ( isset( $_GET['delete_display_page'] ) && $id && check_admin_referer( 'ilc_delete_display_page_' . (int) $_GET['delete_display_page'] ) ) {
+            ILC_Cluster_Model::delete_display_page( (int) $_GET['delete_display_page'] );
+            echo '<div class="notice notice-success"><p>Display page removed.</p></div>';
+        }
+
         if ( $action === 'edit' ) {
             self::render_edit_screen( $id );
         } elseif ( $action === 'add' ) {
@@ -132,6 +141,49 @@ class ILC_Admin_Clusters_Page {
                 )
             );
             echo '<div class="notice notice-success"><p>URL added.</p></div>';
+        }
+    }
+
+    protected static function handle_add_display_page( $cluster_id ) {
+        $input = isset( $_POST['display_page_input'] ) ? sanitize_text_field( wp_unslash( $_POST['display_page_input'] ) ) : '';
+
+        if ( empty( $input ) ) {
+            echo '<div class="notice notice-error"><p>Please enter a URL or Page ID.</p></div>';
+            return;
+        }
+
+        $post_id = null;
+        $url     = '';
+
+        // Check if input is numeric (Page ID)
+        if ( is_numeric( $input ) ) {
+            $post_id = (int) $input;
+            $post    = get_post( $post_id );
+            if ( ! $post ) {
+                echo '<div class="notice notice-error"><p>Post ID not found.</p></div>';
+                return;
+            }
+        } else {
+            // It's a URL - try to find the post ID
+            $url = $input;
+            $post_id_from_url = url_to_postid( $url );
+            if ( $post_id_from_url ) {
+                $post_id = $post_id_from_url;
+            }
+        }
+
+        $result = ILC_Cluster_Model::add_display_page(
+            $cluster_id,
+            array(
+                'post_id' => $post_id,
+                'url'     => $url,
+            )
+        );
+
+        if ( $result ) {
+            echo '<div class="notice notice-success"><p>Display page added. The cluster will now show on this page.</p></div>';
+        } else {
+            echo '<div class="notice notice-error"><p>Failed to add display page.</p></div>';
         }
     }
 
@@ -395,6 +447,83 @@ class ILC_Admin_Clusters_Page {
                     </table>
                     <p class="submit">
                         <button type="submit" name="ilc_add_url" class="button button-secondary"><?php esc_html_e( 'Add URL', 'internal-link-clusters' ); ?></button>
+                    </p>
+                </form>
+
+                <hr />
+                <h2><?php esc_html_e( 'Show Cluster on Additional Pages', 'internal-link-clusters' ); ?></h2>
+                <p class="description"><?php esc_html_e( 'Display this cluster on additional pages without adding those pages as links in the cluster.', 'internal-link-clusters' ); ?></p>
+
+                <?php
+                $display_pages = ILC_Cluster_Model::get_display_pages( $id );
+                if ( ! empty( $display_pages ) ) :
+                    ?>
+                    <table class="widefat striped" style="margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th><?php esc_html_e( 'Page', 'internal-link-clusters' ); ?></th>
+                                <th><?php esc_html_e( 'URL / ID', 'internal-link-clusters' ); ?></th>
+                                <th style="width: 100px;"><?php esc_html_e( 'Actions', 'internal-link-clusters' ); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $display_pages as $dp ) : ?>
+                                <?php
+                                $page_title = '';
+                                $identifier = '';
+
+                                if ( ! empty( $dp->post_id ) ) {
+                                    $post = get_post( $dp->post_id );
+                                    $page_title = $post ? $post->post_title : __( '(Post not found)', 'internal-link-clusters' );
+                                    $identifier = sprintf( __( 'ID: %d', 'internal-link-clusters' ), $dp->post_id );
+                                    if ( ! empty( $dp->url ) ) {
+                                        $identifier .= ' / ' . esc_html( $dp->url );
+                                    }
+                                } elseif ( ! empty( $dp->url ) ) {
+                                    $page_title = esc_html( $dp->url );
+                                    $identifier = __( 'External URL', 'internal-link-clusters' );
+                                }
+                                ?>
+                                <tr>
+                                    <td><?php echo esc_html( $page_title ); ?></td>
+                                    <td><?php echo esc_html( $identifier ); ?></td>
+                                    <td>
+                                        <?php
+                                        $delete_url = wp_nonce_url(
+                                            admin_url( 'admin.php?page=ilc-clusters&action=edit&id=' . (int) $id . '&delete_display_page=' . (int) $dp->id ),
+                                            'ilc_delete_display_page_' . (int) $dp->id
+                                        );
+                                        ?>
+                                        <a href="<?php echo esc_url( $delete_url ); ?>" 
+                                           onclick="return confirm('<?php esc_attr_e( 'Remove this display page?', 'internal-link-clusters' ); ?>');"
+                                           class="submitdelete">
+                                            <?php esc_html_e( 'Remove', 'internal-link-clusters' ); ?>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else : ?>
+                    <p style="margin-top: 15px;"><em><?php esc_html_e( 'No additional display pages configured.', 'internal-link-clusters' ); ?></em></p>
+                <?php endif; ?>
+
+                <h3><?php esc_html_e( 'Add Display Page', 'internal-link-clusters' ); ?></h3>
+                <form method="post">
+                    <?php wp_nonce_field( 'ilc_add_display_page_' . (int) $id ); ?>
+                    <table class="form-table">
+                        <tbody>
+                            <tr>
+                                <th scope="row"><label for="ilc-display-page-input"><?php esc_html_e( 'Page URL or ID', 'internal-link-clusters' ); ?></label></th>
+                                <td>
+                                    <input name="display_page_input" type="text" id="ilc-display-page-input" class="regular-text" placeholder="<?php esc_attr_e( '/example-page/ or 123', 'internal-link-clusters' ); ?>">
+                                    <p class="description"><?php esc_html_e( 'Enter a URL (e.g., /my-page/) or a WordPress Post/Page ID. The cluster will display on this page but the page will NOT appear as a link in the cluster.', 'internal-link-clusters' ); ?></p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="submit">
+                        <button type="submit" name="ilc_add_display_page" class="button button-secondary"><?php esc_html_e( 'Add Display Page', 'internal-link-clusters' ); ?></button>
                     </p>
                 </form>
             <?php endif; ?>
